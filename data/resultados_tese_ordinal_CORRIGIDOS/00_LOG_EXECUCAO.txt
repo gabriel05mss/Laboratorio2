@@ -1,0 +1,1200 @@
+2026-08-24 17:48:44 | INÍCIO DA EXECUÇÃO 
+2026-08-24 17:52:11 | Arquivo Javeriana: C:/Users/gmore/OneDrive/Documentos/GitHub/Laboratorio2/data/javeriana.csv 
+2026-08-24 17:52:12 | Arquivo UFMG: C:/Users/gmore/OneDrive/Documentos/GitHub/Laboratorio2/data/ufmg.xlsx 
+2026-08-24 17:53:00 | ERRO NÃO TRATADO | Error in read.xlsx(arquivo_ufmg, show_col_types = FALSE, name_repair = "minimal") : 
+  argumentos não utilizados (show_col_types = FALSE, name_repair = "minimal")
+ 
+3: withVisible(...elt(i))
+2: capture.output(traceback(2)) at #11
+1: (function () 
+   {
+       mensagem <- geterrmessage()
+       linha <- paste0(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), 
+           " | ERRO NÃO TRATADO | ", mensagem)
+       cat(linha, "\n", file = arquivo_log, append = TRUE)
+       captura <- capture.output(traceback(2))
+       if (length(captura) > 0L) {
+           cat(paste(captura, collapse = "\n"), "\n", file = arquivo_log, 
+               append = TRUE)
+       }
+   })() 
+2026-08-24 17:53:16 | ERRO NÃO TRATADO | Erro: objeto 'validar_contagens_dos_arquivos_atuais' não encontrado
+ 
+4: withVisible(...elt(i))
+3: capture.output(traceback(2)) at #11
+2: (function () 
+   {
+       mensagem <- geterrmessage()
+       linha <- paste0(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), 
+           " | ERRO NÃO TRATADO | ", mensagem)
+       cat(linha, "\n", file = arquivo_log, append = TRUE)
+       captura <- capture.output(traceback(2))
+       if (length(captura) > 0L) {
+           cat(paste(captura, collapse = "\n"), "\n", file = arquivo_log, 
+               append = TRUE)
+       }
+   })()
+1: isTRUE(validar_contagens_dos_arquivos_atuais) 
+2026-08-24 17:54:04 | ERRO NÃO TRATADO | Erro: A busca por coluna não retornou exatamente uma coluna.
+Trecho: Carimbo de data/hora
+Quantidade encontrada: 0
+Correspondências: 
+ 
+5: withVisible(...elt(i))
+4: capture.output(traceback(2)) at #11
+3: (function () 
+   {
+       mensagem <- geterrmessage()
+       linha <- paste0(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), 
+           " | ERRO NÃO TRATADO | ", mensagem)
+       cat(linha, "\n", file = arquivo_log, append = TRUE)
+       captura <- capture.output(traceback(2))
+       if (length(captura) > 0L) {
+           cat(paste(captura, collapse = "\n"), "\n", file = arquivo_log, 
+               append = TRUE)
+       }
+   })()
+2: stop(paste0("A busca por coluna não retornou exatamente uma coluna.\n", 
+       "Trecho: ", trecho, "\n", "Quantidade encontrada: ", length(indice), 
+       "\n", "Correspondências: ", paste(nomes[indice], collapse = " | ")), 
+       call. = FALSE) at #11
+1: achar_coluna(base_ufmg_original, "Carimbo de data/hora", TRUE) 
+2026-08-24 17:55:15 | ERRO NÃO TRATADO | Erro: A busca por coluna não retornou exatamente uma coluna.
+Trecho: Carimbo de data/hora
+Quantidade encontrada: 0
+Correspondências: 
+ 
+5: withVisible(...elt(i))
+4: capture.output(traceback(2)) at #11
+3: (function () 
+   {
+       mensagem <- geterrmessage()
+       linha <- paste0(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), 
+           " | ERRO NÃO TRATADO | ", mensagem)
+       cat(linha, "\n", file = arquivo_log, append = TRUE)
+       captura <- capture.output(traceback(2))
+       if (length(captura) > 0L) {
+           cat(paste(captura, collapse = "\n"), "\n", file = arquivo_log, 
+               append = TRUE)
+       }
+   })()
+2: stop(paste0("A busca por coluna não retornou exatamente uma coluna.\n", 
+       "Trecho: ", trecho, "\n", "Quantidade encontrada: ", length(indice), 
+       "\n", "Correspondências: ", paste(nomes[indice], collapse = " | ")), 
+       call. = FALSE) at #11
+1: achar_coluna(base_ufmg_original, "Carimbo de data/hora", TRUE) 
+2026-08-24 17:56:48 | ERRO NÃO TRATADO | Error in (function (path, write = FALSE, call = caller_env())  : 
+ 
+12: withVisible(...elt(i))
+11: capture.output(traceback(2)) at #11
+10: (function () 
+    {
+        mensagem <- geterrmessage()
+        linha <- paste0(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), 
+            " | ERRO NÃO TRATADO | ", mensagem)
+        cat(linha, "\n", file = arquivo_log, append = TRUE)
+        captura <- capture.output(traceback(2))
+        if (length(captura) > 0L) {
+            cat(paste(captura, collapse = "\n"), "\n", file = arquivo_log, 
+                append = TRUE)
+        }
+    })()
+9: stop(fallback)
+8: signal_abort(cnd, .file)
+7: rlang::abort(message, ..., call = call, use_cli_format = TRUE, 
+       .frame = .frame)
+6: cli::cli_abort(msg, call = call)
+5: check_path(path)
+4: (function (path, write = FALSE, call = caller_env()) 
+   {
+       if (is.raw(path)) {
+           return(rawConnection(path, "rb"))
+       }
+       if (!is.character(path)) {
+           return(path)
+       }
+       if (is_url(path)) {
+           ext <- tolower(tools::file_ext(path))
+           if (ext %in% c("gz", "bz2", "xz", "zip")) {
+               cli::cli_abort("Remote compressed files must be handled upstream of this function.", 
+                   .internal = TRUE)
+           }
+           if (requireNamespace("curl", quietly = TRUE)) {
+               con <- curl::curl(path)
+           }
+           else {
+               inform("`curl` package not installed, falling back to using `url()`")
+               con <- url(path)
+    ...
+3: vroom_(file, delim = delim %||% col_types$delim, col_names = col_names, 
+       col_types = col_types, id = id, skip = skip, col_select = col_select, 
+       name_repair = .name_repair, na = na, quote = quote, trim_ws = trim_ws, 
+       escape_double = escape_double, escape_backslash = escape_backslash, 
+       comment = comment, skip_empty_rows = skip_empty_rows, locale = locale, 
+       guess_max = guess_max, n_max = n_max, altrep = vroom_altrep(altrep), 
+       num_threads = num_threads, progress = progress)
+2: vroom::vroom(file, delim = ",", col_names = col_names, col_types = col_types, 
+       col_select = {
+           {
+               col_select
+           }
+       }, id = id, .name_repair = name_repair, skip = skip, n_max = n_max, 
+       na = na, quote = quote, comment = comment, skip_empty_rows = skip_empty_rows, 
+       trim_ws = trim_ws, escape_double = TRUE, escape_backslash = FALSE, 
+       locale = locale, guess_max = guess_max, show_col_types = show_col_types, 
+       progress = progress, altrep = lazy, num_threads = num_threads)
+1: readr::read_csv(arquivo_ufmg, show_col_types = FALSE, name_repair = "minimal") 
+2026-08-24 17:58:28 | Arquivo Javeriana: C:/Users/gmore/OneDrive/Documentos/GitHub/Laboratorio2/data/javeriana.csv 
+2026-08-24 17:58:28 | Arquivo UFMG: C:/Users/gmore/OneDrive/Documentos/GitHub/Laboratorio2/data/ufmg.xlsx 
+2026-08-24 17:58:58 | ERRO NÃO TRATADO | Error in file(con, "r") : argumento 'description' inválido
+ 
+9: withVisible(...elt(i))
+8: capture.output(traceback(2)) at #11
+7: (function () 
+   {
+       mensagem <- geterrmessage()
+       linha <- paste0(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), 
+           " | ERRO NÃO TRATADO | ", mensagem)
+       cat(linha, "\n", file = arquivo_log, append = TRUE)
+       captura <- capture.output(traceback(2))
+       if (length(captura) > 0L) {
+           cat(paste(captura, collapse = "\n"), "\n", file = arquivo_log, 
+               append = TRUE)
+       }
+   })()
+6: file(con, "r")
+5: readLines(x, warn = FALSE, encoding = "UTF-8")
+4: readUTF8(workbookRelsXML)
+3: paste(readUTF8(workbookRelsXML), collapse = "")
+2: read.xlsx.default(arquivo_ufmg)
+1: read.xlsx(arquivo_ufmg) 
+2026-08-24 17:59:17 | Arquivo Javeriana: C:/Users/gmore/OneDrive/Documentos/GitHub/Laboratorio2/data/javeriana.csv 
+2026-08-24 17:59:18 | Arquivo UFMG: C:/Users/gmore/OneDrive/Documentos/GitHub/Laboratorio2/data/ufmg.xlsx 
+2026-08-24 17:59:19 | ERRO NÃO TRATADO | Error in file(con, "r") : argumento 'description' inválido
+ 
+9: withVisible(...elt(i))
+8: capture.output(traceback(2)) at #11
+7: (function () 
+   {
+       mensagem <- geterrmessage()
+       linha <- paste0(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), 
+           " | ERRO NÃO TRATADO | ", mensagem)
+       cat(linha, "\n", file = arquivo_log, append = TRUE)
+       captura <- capture.output(traceback(2))
+       if (length(captura) > 0L) {
+           cat(paste(captura, collapse = "\n"), "\n", file = arquivo_log, 
+               append = TRUE)
+       }
+   })()
+6: file(con, "r")
+5: readLines(x, warn = FALSE, encoding = "UTF-8")
+4: readUTF8(workbookRelsXML)
+3: paste(readUTF8(workbookRelsXML), collapse = "")
+2: read.xlsx.default(arquivo_ufmg)
+1: read.xlsx(arquivo_ufmg) 
+2026-08-24 18:01:08 | Arquivo Javeriana: C:/Users/gmore/OneDrive/Documentos/GitHub/Laboratorio2/data/javeriana.csv 
+2026-08-24 18:01:08 | Arquivo UFMG: C:/Users/gmore/OneDrive/Documentos/GitHub/Laboratorio2/data/ufmg.xlsx 
+2026-08-24 18:02:17 | ERRO NÃO TRATADO | Error in names() : 0 argumento passado para 'names', que requer 1
+ 
+3: withVisible(...elt(i))
+2: capture.output(traceback(2)) at #11
+1: (function () 
+   {
+       mensagem <- geterrmessage()
+       linha <- paste0(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), 
+           " | ERRO NÃO TRATADO | ", mensagem)
+       cat(linha, "\n", file = arquivo_log, append = TRUE)
+       captura <- capture.output(traceback(2))
+       if (length(captura) > 0L) {
+           cat(paste(captura, collapse = "\n"), "\n", file = arquivo_log, 
+               append = TRUE)
+       }
+   })() 
+2026-08-24 18:04:28 | ERRO NÃO TRATADO | Erro: A busca por coluna não retornou exatamente uma coluna.
+Trecho: Caminhada pelo campus
+Quantidade encontrada: 0
+Correspondências: 
+ 
+5: withVisible(...elt(i))
+4: capture.output(traceback(2)) at #11
+3: (function () 
+   {
+       mensagem <- geterrmessage()
+       linha <- paste0(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), 
+           " | ERRO NÃO TRATADO | ", mensagem)
+       cat(linha, "\n", file = arquivo_log, append = TRUE)
+       captura <- capture.output(traceback(2))
+       if (length(captura) > 0L) {
+           cat(paste(captura, collapse = "\n"), "\n", file = arquivo_log, 
+               append = TRUE)
+       }
+   })()
+2: stop(paste0("A busca por coluna não retornou exatamente uma coluna.\n", 
+       "Trecho: ", trecho, "\n", "Quantidade encontrada: ", length(indice), 
+       "\n", "Correspondências: ", paste(nomes[indice], collapse = " | ")), 
+       call. = FALSE) at #11
+1: achar_coluna(base_ufmg_original, "Caminhada pelo campus") 
+2026-08-24 18:44:01 | ERRO NÃO TRATADO | Error in source("~/GitHub/Laboratorio2/R/codigo_cliente.R", echo = TRUE) : 
+  ~/GitHub/Laboratorio2/R/codigo_cliente.R:3509:1: '}' inesperado
+3508:   )
+3509: }
+      ^
+ 
+4: withVisible(...elt(i))
+3: capture.output(traceback(2)) at #11
+2: (function () 
+   {
+       mensagem <- geterrmessage()
+       linha <- paste0(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), 
+           " | ERRO NÃO TRATADO | ", mensagem)
+       cat(linha, "\n", file = arquivo_log, append = TRUE)
+       captura <- capture.output(traceback(2))
+       if (length(captura) > 0L) {
+           cat(paste(captura, collapse = "\n"), "\n", file = arquivo_log, 
+               append = TRUE)
+       }
+   })()
+1: source("~/GitHub/Laboratorio2/R/codigo_cliente.R", echo = TRUE) 
+2026-08-24 18:44:21 | ERRO NÃO TRATADO | Error in select(., -any_of(excluir)) : 
+[1mCaused by error:[22m
+[33m![39m objeto 'col_u' não encontrado
+ 
+31: withVisible(...elt(i))
+30: capture.output(traceback(2)) at #11
+29: (function () 
+    {
+        mensagem <- geterrmessage()
+        linha <- paste0(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), 
+            " | ERRO NÃO TRATADO | ", mensagem)
+        cat(linha, "\n", file = arquivo_log, append = TRUE)
+        captura <- capture.output(traceback(2))
+        if (length(captura) > 0L) {
+            cat(paste(captura, collapse = "\n"), "\n", file = arquivo_log, 
+                append = TRUE)
+        }
+    })()
+28: stop(fallback)
+27: signal_abort(cnd, .file)
+26: rlang::abort(message, ..., call = call, use_cli_format = TRUE, 
+        .frame = .frame)
+25: cli::cli_abort(c(i = msg), call = call, parent = cnd)
+24: h(simpleError(msg, call))
+23: .handleSimpleError(function (cnd) 
+    {
+        eval_expr <- quo_squash(eval_expr)
+        if (!is_call(eval_expr) || identical(cnd[["call"]], call2(eval_expr[[1]]))) {
+            msg <- ""
+        }
+        else {
+            code <- as_label(eval_expr)
+            msg <- cli::format_inline("In argument: {.code {code}}.")
+        }
+        cli::cli_abort(c(i = msg), call = call, parent = cnd)
+    }, "objeto 'col_u' não encontrado", base::quote(NULL))
+22: as_indices_impl(x, vars = vars, strict = FALSE)
+21: any_of(excluir)
+20: eval_tidy(as_quosure(expr, env), context_mask)
+19: withCallingHandlers(expr, error = function(cnd) {
+        eval_expr <- quo_squash(eval_expr)
+        if (!is_call(eval_expr) || identical(cnd[["call"]], call2(eval_expr[[1]]))) {
+            msg <- ""
+        }
+        else {
+            code <- as_label(eval_expr)
+            msg <- cli::format_inline("In argument: {.code {code}}.")
+        }
+        cli::cli_abort(c(i = msg), call = call, parent = cnd)
+    })
+18: with_chained_errors(eval_tidy(as_quosure(expr, env), context_mask), 
+        call = call, eval_expr = expr)
+17: eval_context(expr, context_mask, call = error_call)
+16: walk_data_tree(new, data_mask, context_mask)
+15: reduce_sels(node, data_mask, context_mask, init = init)
+14: eval_c(expr, data_mask, context_mask)
+13: walk_data_tree(expr, data_mask, context_mask)
+12: vars_select_eval(vars, expr, strict = strict, data = x, name_spec = name_spec, 
+        uniquely_named = uniquely_named, allow_rename = allow_rename, 
+        allow_empty = allow_empty, allow_predicates = allow_predicates, 
+        type = type, error_call = error_call)
+11: withCallingHandlers(expr, vctrs_error_subscript = function(cnd) {
+        cnd$subscript_action <- subscript_action(type)
+        cnd$subscript_elt <- "column"
+        cnd_signal(cnd)
+    })
+10: with_subscript_errors(out <- vars_select_eval(vars, expr, strict = strict, 
+        data = x, name_spec = name_spec, uniquely_named = uniquely_named, 
+        allow_rename = allow_rename, allow_empty = allow_empty, allow_predicates = allow_predicates, 
+        type = type, error_call = error_call), type = type)
+9: eval_select_impl(data, names(data), as_quosure(expr, env), include = include, 
+       exclude = exclude, strict = strict, name_spec = name_spec, 
+       allow_rename = allow_rename, allow_empty = allow_empty, allow_predicates = allow_predicates, 
+       error_call = error_call, )
+8: tidyselect::eval_select(expr(c(...)), data = .data, error_call = error_call)
+7: select.data.frame(., -any_of(excluir))
+6: select(., -any_of(excluir))
+5: mutate(., across(everything(), as.character))
+4: df %>% select(-any_of(excluir)) %>% mutate(across(everything(), 
+       as.character)) at #2
+3: verificar_duplicatas(base_ufmg_original, excluir = c(col_u$data, 
+       col_u$interesse_grupo, col_u$email, col_u$whatsapp), origem = "UFMG")
+2: list2(...)
+1: bind_rows(verificar_duplicatas(base_javeriana_original, excluir = c("salud_mental_ins", 
+       "redcap_survey_identifier", "form_1_timestamp", "grupo_focal_permision", 
+       "grupo_focal_puj", "dados_grupo_focal_puj"), origem = "Javeriana"), 
+       verificar_duplicatas(base_ufmg_original, excluir = c(col_u$data, 
+           col_u$interesse_grupo, col_u$email, col_u$whatsapp), 
+           origem = "UFMG")) 
+2026-08-24 18:54:04 | ERRO NÃO TRATADO | Erro: objeto 'col_u' não encontrado
+ 
+11: withVisible(...elt(i))
+10: capture.output(traceback(2)) at #11
+9: (function () 
+   {
+       mensagem <- geterrmessage()
+       linha <- paste0(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), 
+           " | ERRO NÃO TRATADO | ", mensagem)
+       cat(linha, "\n", file = arquivo_log, append = TRUE)
+       captura <- capture.output(traceback(2))
+       if (length(captura) > 0L) {
+           cat(paste(captura, collapse = "\n"), "\n", file = arquivo_log, 
+               append = TRUE)
+       }
+   })()
+8: quos(..., .ignore_empty = "all")
+7: dplyr_quosures(...)
+6: force(dots)
+5: mutate_cols(.data, dplyr_quosures(...), by)
+4: mutate.data.frame(., .data_hora_filtro = parse_date_time(.data[[col_u$data]], 
+       orders = c("dmy HMS", "dmy HM", "ymd HMS", "ymd HM"), quiet = TRUE), 
+       .elegibilidade = normalizar_texto(.data[[col_u$elegibilidade]]), 
+       .consentimento = normalizar_texto(str_remove_all(.data[[col_u$consentimento]], 
+           "^\"|\"$")))
+3: mutate(., .data_hora_filtro = parse_date_time(.data[[col_u$data]], 
+       orders = c("dmy HMS", "dmy HM", "ymd HMS", "ymd HM"), quiet = TRUE), 
+       .elegibilidade = normalizar_texto(.data[[col_u$elegibilidade]]), 
+       .consentimento = normalizar_texto(str_remove_all(.data[[col_u$consentimento]], 
+           "^\"|\"$")))
+2: filter(., !is.na(.data_hora_filtro), as.Date(.data_hora_filtro) >= 
+       data_min_ufmg, .elegibilidade == "sim", str_detect(.consentimento, 
+       fixed("concordo em participar")))
+1: base_ufmg %>% mutate(.data_hora_filtro = parse_date_time(.data[[col_u$data]], 
+       orders = c("dmy HMS", "dmy HM", "ymd HMS", "ymd HM"), quiet = TRUE), 
+       .elegibilidade = normalizar_texto(.data[[col_u$elegibilidade]]), 
+       .consentimento = normalizar_texto(str_remove_all(.data[[col_u$consentimento]], 
+           "^\"|\"$"))) %>% filter(!is.na(.data_hora_filtro), as.Date(.data_hora_filtro) >= 
+       data_min_ufmg, .elegibilidade == "sim", str_detect(.consentimento, 
+       fixed("concordo em participar"))) 
+2026-08-24 18:54:46 | ERRO NÃO TRATADO | Erro: objeto 'col_u' não encontrado
+ 
+11: withVisible(...elt(i))
+10: capture.output(traceback(2)) at #11
+9: (function () 
+   {
+       mensagem <- geterrmessage()
+       linha <- paste0(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), 
+           " | ERRO NÃO TRATADO | ", mensagem)
+       cat(linha, "\n", file = arquivo_log, append = TRUE)
+       captura <- capture.output(traceback(2))
+       if (length(captura) > 0L) {
+           cat(paste(captura, collapse = "\n"), "\n", file = arquivo_log, 
+               append = TRUE)
+       }
+   })()
+8: quos(..., .ignore_empty = "all")
+7: dplyr_quosures(...)
+6: force(dots)
+5: mutate_cols(.data, dplyr_quosures(...), by)
+4: mutate.data.frame(., .data_hora_filtro = parse_date_time(data, 
+       orders = c("dmy HMS", "dmy HM", "ymd HMS", "ymd HM"), quiet = TRUE), 
+       .elegibilidade = normalizar_texto(.data[[col_u$elegibilidade]]), 
+       .consentimento = normalizar_texto(str_remove_all(.data[[col_u$consentimento]], 
+           "^\"|\"$")))
+3: mutate(., .data_hora_filtro = parse_date_time(data, orders = c("dmy HMS", 
+       "dmy HM", "ymd HMS", "ymd HM"), quiet = TRUE), .elegibilidade = normalizar_texto(.data[[col_u$elegibilidade]]), 
+       .consentimento = normalizar_texto(str_remove_all(.data[[col_u$consentimento]], 
+           "^\"|\"$")))
+2: filter(., !is.na(.data_hora_filtro), as.Date(.data_hora_filtro) >= 
+       data_min_ufmg, .elegibilidade == "sim", str_detect(.consentimento, 
+       fixed("concordo em participar")))
+1: base_ufmg %>% mutate(.data_hora_filtro = parse_date_time(data, 
+       orders = c("dmy HMS", "dmy HM", "ymd HMS", "ymd HM"), quiet = TRUE), 
+       .elegibilidade = normalizar_texto(.data[[col_u$elegibilidade]]), 
+       .consentimento = normalizar_texto(str_remove_all(.data[[col_u$consentimento]], 
+           "^\"|\"$"))) %>% filter(!is.na(.data_hora_filtro), as.Date(.data_hora_filtro) >= 
+       data_min_ufmg, .elegibilidade == "sim", str_detect(.consentimento, 
+       fixed("concordo em participar"))) 
+2026-08-24 18:59:11 | ERRO NÃO TRATADO | Error in filter(., !is.na(.data_hora_filtro), as.Date(.data_hora_filtro) >=  : 
+  
+[1mCaused by error:[22m
+[33m![39m objeto '.elegibilidade' não encontrado
+ 
+18: withVisible(...elt(i))
+17: capture.output(traceback(2)) at #11
+16: (function () 
+    {
+        mensagem <- geterrmessage()
+        linha <- paste0(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), 
+            " | ERRO NÃO TRATADO | ", mensagem)
+        cat(linha, "\n", file = arquivo_log, append = TRUE)
+        captura <- capture.output(traceback(2))
+        if (length(captura) > 0L) {
+            cat(paste(captura, collapse = "\n"), "\n", file = arquivo_log, 
+                append = TRUE)
+        }
+    })()
+15: stop(fallback)
+14: signal_abort(cnd, .file)
+13: abort(message, class = error_class, parent = parent, call = error_call)
+12: h(simpleError(msg, call))
+11: .handleSimpleError(function (cnd) 
+    {
+        local_error_context(dots, i = frame[[i_sym]], mask = mask)
+        if (inherits(cnd, "dplyr:::internal_error")) {
+            parent <- error_cnd(message = bullets(cnd))
+        }
+        else {
+            parent <- cnd
+        }
+        message <- c(cnd_bullet_header(action), i = if (has_active_group_context(mask)) cnd_bullet_cur_group_label())
+        abort(message, class = error_class, parent = parent, call = error_call)
+    }, "objeto '.elegibilidade' não encontrado", base::quote(NULL))
+10: .Call(dplyr_mask_eval_all_filter, quos, invert, private, private$size, 
+        env_filter)
+9: eval()
+8: mask$eval_all_filter(dots_expanded, invert, env_filter)
+7: withCallingHandlers(mask$eval_all_filter(dots_expanded, invert, 
+       env_filter), error = dplyr_error_handler(dots = dots, mask = mask, 
+       bullets = filter_bullets, error_call = error_call), warning = function(cnd) {
+       local_error_context(dots, i, mask)
+       warning_handler(cnd)
+   }, `dplyr:::signal_filter_one_column_matrix` = function(e) {
+       warn_filter_one_column_matrix(env = error_call, user_env = user_env)
+   })
+6: filter_eval(dots = dots, dots_expanded = dots_expanded, invert = invert, 
+       mask = mask, error_call = error_call, user_env = user_env)
+5: filter_rows(data = .data, dots = dots, by = by, verb = .verb, 
+       error_call = .error_call, user_env = .user_env)
+4: filter_impl(.data = .data, ..., .by = {
+       {
+           .by
+       }
+   }, .preserve = .preserve, .verb = "filter")
+3: filter.data.frame(., !is.na(.data_hora_filtro), as.Date(.data_hora_filtro) >= 
+       data_min_ufmg, .elegibilidade == "sim", str_detect(.consentimento, 
+       fixed("concordo em participar")))
+2: filter(., !is.na(.data_hora_filtro), as.Date(.data_hora_filtro) >= 
+       data_min_ufmg, .elegibilidade == "sim", str_detect(.consentimento, 
+       fixed("concordo em participar")))
+1: base_ufmg %>% mutate(.data_hora_filtro = parse_date_time(data, 
+       orders = c("dmy HMS", "dmy HM", "ymd HMS", "ymd HM"), quiet = TRUE)) %>% 
+       filter(!is.na(.data_hora_filtro), as.Date(.data_hora_filtro) >= 
+           data_min_ufmg, .elegibilidade == "sim", str_detect(.consentimento, 
+           fixed("concordo em participar"))) 
+2026-08-24 18:59:19 | ERRO NÃO TRATADO | Error in filter(., !is.na(.data_hora_filtro), as.Date(.data_hora_filtro) >=  : 
+  
+[1mCaused by error:[22m
+[33m![39m objeto '.consentimento' não encontrado
+ 
+22: withVisible(...elt(i))
+21: capture.output(traceback(2)) at #11
+20: (function () 
+    {
+        mensagem <- geterrmessage()
+        linha <- paste0(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), 
+            " | ERRO NÃO TRATADO | ", mensagem)
+        cat(linha, "\n", file = arquivo_log, append = TRUE)
+        captura <- capture.output(traceback(2))
+        if (length(captura) > 0L) {
+            cat(paste(captura, collapse = "\n"), "\n", file = arquivo_log, 
+                append = TRUE)
+        }
+    })()
+19: stop(fallback)
+18: signal_abort(cnd, .file)
+17: abort(message, class = error_class, parent = parent, call = error_call)
+16: h(simpleError(msg, call))
+15: .handleSimpleError(function (cnd) 
+    {
+        local_error_context(dots, i = frame[[i_sym]], mask = mask)
+        if (inherits(cnd, "dplyr:::internal_error")) {
+            parent <- error_cnd(message = bullets(cnd))
+        }
+        else {
+            parent <- cnd
+        }
+        message <- c(cnd_bullet_header(action), i = if (has_active_group_context(mask)) cnd_bullet_cur_group_label())
+        abort(message, class = error_class, parent = parent, call = error_call)
+    }, "objeto '.consentimento' não encontrado", base::quote(NULL))
+14: list2(...) at size.R#97
+13: vctrs::vec_size_common(string = string, pattern = pattern, replacement = replacement, 
+        .call = error_call)
+12: check_lengths(string, pattern)
+11: str_detect(.consentimento, fixed("concordo em participar"))
+10: .Call(dplyr_mask_eval_all_filter, quos, invert, private, private$size, 
+        env_filter)
+9: eval()
+8: mask$eval_all_filter(dots_expanded, invert, env_filter)
+7: withCallingHandlers(mask$eval_all_filter(dots_expanded, invert, 
+       env_filter), error = dplyr_error_handler(dots = dots, mask = mask, 
+       bullets = filter_bullets, error_call = error_call), warning = function(cnd) {
+       local_error_context(dots, i, mask)
+       warning_handler(cnd)
+   }, `dplyr:::signal_filter_one_column_matrix` = function(e) {
+       warn_filter_one_column_matrix(env = error_call, user_env = user_env)
+   })
+6: filter_eval(dots = dots, dots_expanded = dots_expanded, invert = invert, 
+       mask = mask, error_call = error_call, user_env = user_env)
+5: filter_rows(data = .data, dots = dots, by = by, verb = .verb, 
+       error_call = .error_call, user_env = .user_env)
+4: filter_impl(.data = .data, ..., .by = {
+       {
+           .by
+       }
+   }, .preserve = .preserve, .verb = "filter")
+3: filter.data.frame(., !is.na(.data_hora_filtro), as.Date(.data_hora_filtro) >= 
+       data_min_ufmg, elegibilidade == "sim", str_detect(.consentimento, 
+       fixed("concordo em participar")))
+2: filter(., !is.na(.data_hora_filtro), as.Date(.data_hora_filtro) >= 
+       data_min_ufmg, elegibilidade == "sim", str_detect(.consentimento, 
+       fixed("concordo em participar")))
+1: base_ufmg %>% mutate(.data_hora_filtro = parse_date_time(data, 
+       orders = c("dmy HMS", "dmy HM", "ymd HMS", "ymd HM"), quiet = TRUE)) %>% 
+       filter(!is.na(.data_hora_filtro), as.Date(.data_hora_filtro) >= 
+           data_min_ufmg, elegibilidade == "sim", str_detect(.consentimento, 
+           fixed("concordo em participar"))) 
+2026-08-24 19:11:32 | ERRO NÃO TRATADO | Error in source("~/GitHub/Laboratorio2/R/codigo_cliente.R", echo = TRUE) : 
+  ~/GitHub/Laboratorio2/R/codigo_cliente.R:3437:1: '}' inesperado
+3436:   )
+3437: }
+      ^
+ 
+4: withVisible(...elt(i))
+3: capture.output(traceback(2)) at #11
+2: (function () 
+   {
+       mensagem <- geterrmessage()
+       linha <- paste0(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), 
+           " | ERRO NÃO TRATADO | ", mensagem)
+       cat(linha, "\n", file = arquivo_log, append = TRUE)
+       captura <- capture.output(traceback(2))
+       if (length(captura) > 0L) {
+           cat(paste(captura, collapse = "\n"), "\n", file = arquivo_log, 
+               append = TRUE)
+       }
+   })()
+1: source("~/GitHub/Laboratorio2/R/codigo_cliente.R", echo = TRUE) 
+2026-08-24 20:19:29 | ERRO NÃO TRATADO | Error in mutate(., instituicao_origem = "Javeriana", contexto_institucional = "Javeriana – Colômbia",  : 
+  
+[1mCaused by error in `across()`:[22m
+[38;5;252m[33m![38;5;252m `.fns` must be a function, a formula, or a list of functions/formulas.[39m
+ 
+19: withVisible(...elt(i))
+18: capture.output(traceback(2)) at #11
+17: (function () 
+    {
+        mensagem <- geterrmessage()
+        linha <- paste0(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), 
+            " | ERRO NÃO TRATADO | ", mensagem)
+        cat(linha, "\n", file = arquivo_log, append = TRUE)
+        captura <- capture.output(traceback(2))
+        if (length(captura) > 0L) {
+            cat(paste(captura, collapse = "\n"), "\n", file = arquivo_log, 
+                append = TRUE)
+        }
+    })()
+16: stop(fallback)
+15: signal_abort(cnd, .file)
+14: abort(message, class = error_class, parent = parent, call = error_call)
+13: (function (cnd) 
+    {
+        local_error_context(dots, i = frame[[i_sym]], mask = mask)
+        if (inherits(cnd, "dplyr:::internal_error")) {
+            parent <- error_cnd(message = bullets(cnd))
+        }
+        else {
+            parent <- cnd
+        }
+        message <- c(cnd_bullet_header(action), i = if (has_active_group_context(mask)) cnd_bullet_cur_group_label())
+        abort(message, class = error_class, parent = parent, call = error_call)
+    })(list(message = "`.fns` must be a function, a formula, or a list of functions/formulas.", 
+        trace = list(call = list(base_javeriana_filtrada %>% mutate(instituicao_origem = "Javeriana", 
+            contexto_institucional = "Javeriana – Colômbia", indicador_ufmg = 0L, 
+            .estrato_1 = checkbox_01(estrato_economico___1), across(colunas_numeric, 
+                as.numeric())), mutate(., instituicao_origem = "Javeriana", 
+            contexto_institucional = "Javeriana – Colômbia", indicador_ufmg = 0L, 
+            .estrato_1 = checkbox_01(estrato_economico___1), across(colunas_numeric, 
+                as.numeric())), mutate.data.frame(., instituicao_origem = "Javeriana", 
+            contexto_institucional = "Javeriana – Colômbia", indicador_ufmg = 0L, 
+     ...
+12: signalCondition(cnd)
+11: signal_abort(cnd, .file)
+10: abort("`.fns` must be a function, a formula, or a list of functions/formulas.", 
+        call = error_call)
+9: validate(out)
+8: quo_eval_fns(fns, mask = mask, error_call = error_call)
+7: expand_across(dot)
+6: mutate_col(dots[[i]], data, mask, new_columns)
+5: withCallingHandlers(for (i in seq_along(dots)) {
+       poke_error_context(dots, i, mask = mask)
+       context_poke("column", old_current_column)
+       new_columns <- mutate_col(dots[[i]], data, mask, new_columns)
+   }, error = dplyr_error_handler(dots = dots, mask = mask, bullets = mutate_bullets, 
+       error_call = error_call, error_class = "dplyr:::mutate_error"), 
+       warning = dplyr_warning_handler(state = warnings_state, mask = mask, 
+           error_call = error_call))
+4: mutate_cols(.data, dplyr_quosures(...), by)
+3: mutate.data.frame(., instituicao_origem = "Javeriana", contexto_institucional = "Javeriana – Colômbia", 
+       indicador_ufmg = 0L, .estrato_1 = checkbox_01(estrato_economico___1), 
+       across(colunas_numeric, as.numeric()))
+2: mutate(., instituicao_origem = "Javeriana", contexto_institucional = "Javeriana – Colômbia", 
+       indicador_ufmg = 0L, .estrato_1 = checkbox_01(estrato_economico___1), 
+       across(colunas_numeric, as.numeric()))
+1: base_javeriana_filtrada %>% mutate(instituicao_origem = "Javeriana", 
+       contexto_institucional = "Javeriana – Colômbia", indicador_ufmg = 0L, 
+       .estrato_1 = checkbox_01(estrato_economico___1), across(colunas_numeric, 
+           as.numeric())) 
+2026-08-24 20:31:50 | ERRO NÃO TRATADO | Error in mutate(., instituicao_origem = "Javeriana", contexto_institucional = "Javeriana – Colômbia",  : 
+  
+[1mCaused by error in `across()`:[22m
+[38;5;252m[36mℹ[38;5;252m In argument: `all_of(colunas_numeric)`.[39m
+[1mCaused by error in `all_of()`:[22m
+[33m![39m Can't subset elements that don't exist.
+[31m✖[39m Elements `sm_interesse`, `sm_satisfacao`, `sm_contribuicao`, `sm_comunidade`, `sm_sociedade_melhor`, etc. don't exist.
+ 
+41: withVisible(...elt(i))
+40: capture.output(traceback(2)) at #11
+39: (function () 
+    {
+        mensagem <- geterrmessage()
+        linha <- paste0(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), 
+            " | ERRO NÃO TRATADO | ", mensagem)
+        cat(linha, "\n", file = arquivo_log, append = TRUE)
+        captura <- capture.output(traceback(2))
+        if (length(captura) > 0L) {
+            cat(paste(captura, collapse = "\n"), "\n", file = arquivo_log, 
+                append = TRUE)
+        }
+    })()
+38: stop(fallback)
+37: signal_abort(cnd, .file)
+36: abort(message, class = error_class, parent = parent, call = error_call)
+35: (function (cnd) 
+    {
+        local_error_context(dots, i = frame[[i_sym]], mask = mask)
+        if (inherits(cnd, "dplyr:::internal_error")) {
+            parent <- error_cnd(message = bullets(cnd))
+        }
+        else {
+            parent <- cnd
+        }
+        message <- c(cnd_bullet_header(action), i = if (has_active_group_context(mask)) cnd_bullet_cur_group_label())
+        abort(message, class = error_class, parent = parent, call = error_call)
+    })(list(message = c(i = "In argument: `all_of(colunas_numeric)`."), 
+        parent = list(message = "", trace = list(call = list(base_javeriana_filtrada %>% 
+            mutate(instituicao_origem = "Javeriana", contexto_institucional = "Javeriana – Colômbia", 
+                indicador_ufmg = 0L, .estrato_1 = checkbox_01(estrato_economico___1), 
+                across(all_of(colunas_numeric), ~as.numeric(.x)), 
+                deficiencia_sim = case_when(as.numeric(deficiencia) == 
+                    1 ~ 1L, as.numeric(deficiencia) == 0 ~ 0L, TRUE ~ 
+                    NA_integer_), deficiencia_fisica = case_when(is.na(deficiencia_sim) ~ 
+                    NA_integer_, deficiencia_sim == 0L ~ 0L, TRUE ~ 
+     ...
+34: signalCondition(cnd)
+33: signal_abort(cnd, .file)
+32: rlang::abort(message, ..., call = call, use_cli_format = TRUE, 
+        .frame = .frame)
+31: cli::cli_abort(c(i = msg), call = call, parent = cnd)
+30: (function (cnd) 
+    {
+        eval_expr <- quo_squash(eval_expr)
+        if (!is_call(eval_expr) || identical(cnd[["call"]], call2(eval_expr[[1]]))) {
+            msg <- ""
+        }
+        else {
+            code <- as_label(eval_expr)
+            msg <- cli::format_inline("In argument: {.code {code}}.")
+        }
+        cli::cli_abort(c(i = msg), call = call, parent = cnd)
+    })(list(message = "", trace = list(call = list(base_javeriana_filtrada %>% 
+        mutate(instituicao_origem = "Javeriana", contexto_institucional = "Javeriana – Colômbia", 
+            indicador_ufmg = 0L, .estrato_1 = checkbox_01(estrato_economico___1), 
+            across(all_of(colunas_numeric), ~as.numeric(.x)), deficiencia_sim = case_when(as.numeric(deficiencia) == 
+                1 ~ 1L, as.numeric(deficiencia) == 0 ~ 0L, TRUE ~ 
+                NA_integer_), deficiencia_fisica = case_when(is.na(deficiencia_sim) ~ 
+                NA_integer_, deficiencia_sim == 0L ~ 0L, TRUE ~ coalesce(tipo_deficiencia___1, 
+                0L)), deficiencia_tetraplegia = case_when(is.na(deficiencia_sim) ~ 
+                NA_integer_, deficiencia_sim == 0L ~ 0L, TRUE ~ coalesce(tipo_deficiencia___tetraplejia, 
+     ...
+29: signalCondition(cnd)
+28: signal_abort(cnd, .file)
+27: abort(class = c(class, "vctrs_error_subscript"), i = i, ..., 
+        call = call) at subscript.R#150
+26: stop_subscript(class = "vctrs_error_subscript_oob", i = i, subscript_type = subscript_type, 
+        ..., call = call) at subscript-loc.R#503
+25: stop_subscript_oob(i = i, subscript_type = subscript_type, names = names, 
+        subscript_action = subscript_action, subscript_arg = subscript_arg, 
+        call = call)
+24: (function () 
+    stop_subscript_oob(i = i, subscript_type = subscript_type, names = names, 
+        subscript_action = subscript_action, subscript_arg = subscript_arg, 
+        call = call))() at subscript-loc.R#84
+23: vctrs::vec_as_location(x, n = length(vars), names = vars, call = call, 
+        arg = arg)
+22: chr_as_locations(x, vars, call = call, arg = arg)
+21: as_indices_impl(x, vars = vars, strict = TRUE)
+20: all_of(colunas_numeric)
+19: eval_tidy(as_quosure(expr, env), context_mask)
+18: withCallingHandlers(expr, error = function(cnd) {
+        eval_expr <- quo_squash(eval_expr)
+        if (!is_call(eval_expr) || identical(cnd[["call"]], call2(eval_expr[[1]]))) {
+            msg <- ""
+        }
+        else {
+            code <- as_label(eval_expr)
+            msg <- cli::format_inline("In argument: {.code {code}}.")
+        }
+        cli::cli_abort(c(i = msg), call = call, parent = cnd)
+    })
+17: with_chained_errors(eval_tidy(as_quosure(expr, env), context_mask), 
+        call = call, eval_expr = expr)
+16: eval_context(expr, context_mask, call = error_call)
+15: walk_data_tree(expr, data_mask, context_mask)
+14: vars_select_eval(vars, expr, strict = strict, data = x, name_spec = name_spec, 
+        uniquely_named = uniquely_named, allow_rename = allow_rename, 
+        allow_empty = allow_empty, allow_predicates = allow_predicates, 
+        type = type, error_call = error_call)
+13: withCallingHandlers(expr, vctrs_error_subscript = function(cnd) {
+        cnd$subscript_action <- subscript_action(type)
+        cnd$subscript_elt <- "column"
+        cnd_signal(cnd)
+    })
+12: with_subscript_errors(out <- vars_select_eval(vars, expr, strict = strict, 
+        data = x, name_spec = name_spec, uniquely_named = uniquely_named, 
+        allow_rename = allow_rename, allow_empty = allow_empty, allow_predicates = allow_predicates, 
+        type = type, error_call = error_call), type = type)
+11: eval_select_impl(data, names(data), as_quosure(expr, env), include = include, 
+        exclude = exclude, strict = strict, name_spec = name_spec, 
+        allow_rename = allow_rename, allow_empty = allow_empty, allow_predicates = allow_predicates, 
+        error_call = error_call, )
+10: tidyselect::eval_select(cols, data = data, error_call = error_call)
+9: across_setup(!!cols, fns = fns, names = eval_tidy(expr$.names, 
+       mask, env = env), .caller_env = env, mask = dplyr_mask, error_call = error_call, 
+       across_if_fn = across_if_fn)
+8: expand_across(dot)
+7: mutate_col(dots[[i]], data, mask, new_columns)
+6: withCallingHandlers(for (i in seq_along(dots)) {
+       poke_error_context(dots, i, mask = mask)
+       context_poke("column", old_current_column)
+       new_columns <- mutate_col(dots[[i]], data, mask, new_columns)
+   }, error = dplyr_error_handler(dots = dots, mask = mask, bullets = mutate_bullets, 
+       error_call = error_call, error_class = "dplyr:::mutate_error"), 
+       warning = dplyr_warning_handler(state = warnings_state, mask = mask, 
+           error_call = error_call))
+5: mutate_cols(.data, dplyr_quosures(...), by)
+4: mutate.data.frame(., instituicao_origem = "Javeriana", contexto_institucional = "Javeriana – Colômbia", 
+       indicador_ufmg = 0L, .estrato_1 = checkbox_01(estrato_economico___1), 
+       across(all_of(colunas_numeric), ~as.numeric(.x)), deficiencia_sim = case_when(as.numeric(deficiencia) == 
+           1 ~ 1L, as.numeric(deficiencia) == 0 ~ 0L, TRUE ~ NA_integer_), 
+       deficiencia_fisica = case_when(is.na(deficiencia_sim) ~ NA_integer_, 
+           deficiencia_sim == 0L ~ 0L, TRUE ~ coalesce(tipo_deficiencia___1, 
+               0L)), deficiencia_tetraplegia = case_when(is.na(deficiencia_sim) ~ 
+           NA_integer_, deficiencia_sim == 0L ~ 0L, TRUE ~ coalesce(tipo_deficiencia___tetraplejia, 
+           0L)), deficiencia_auditiva = case_when(is.na(deficiencia_sim) ~ 
+           NA_integer_, deficiencia_sim == 0L ~ 0L, TRUE ~ coalesce(tipo_deficiencia___2, 
+           0L)), deficiencia_visual = case_when(is.na(deficiencia_sim) ~ 
+           NA_integer_, deficiencia_sim == 0L ~ 0L, TRUE ~ coalesce(tipo_deficiencia___3, 
+           0L)), deficiencia_surdocegueira = case_when(is.na(deficiencia_sim) ~ 
+           NA_integer_, deficiencia_sim == 0L ~ 0L, TRUE ~ coalesce(tipo_deficiencia___4, 
+           0L)), deficiencia_multipla = case_when(is.na(deficiencia_sim) ~ 
+           NA_integer_, deficiencia_sim == 0L ~ 0L, TRUE ~ coalesce(tipo_deficiencia___5, 
+           0L)), deficiencia_intelectual = case_when(is.na(deficiencia_sim) ~ 
+           NA_integer_, deficiencia_sim == 0L ~ 0L, TRUE ~ coalesce(tipo_deficiencia___6, 
+           0L)), deficiencia_tea = case_when(is.na(deficiencia_sim) ~ 
+           NA_integer_, deficiencia_sim == 0L ~ 0L, TRUE ~ coalesce(tipo_deficiencia___7, 
+    ...
+3: mutate(., instituicao_origem = "Javeriana", contexto_institucional = "Javeriana – Colômbia", 
+       indicador_ufmg = 0L, .estrato_1 = checkbox_01(estrato_economico___1), 
+       across(all_of(colunas_numeric), ~as.numeric(.x)), deficiencia_sim = case_when(as.numeric(deficiencia) == 
+           1 ~ 1L, as.numeric(deficiencia) == 0 ~ 0L, TRUE ~ NA_integer_), 
+       deficiencia_fisica = case_when(is.na(deficiencia_sim) ~ NA_integer_, 
+           deficiencia_sim == 0L ~ 0L, TRUE ~ coalesce(tipo_deficiencia___1, 
+               0L)), deficiencia_tetraplegia = case_when(is.na(deficiencia_sim) ~ 
+           NA_integer_, deficiencia_sim == 0L ~ 0L, TRUE ~ coalesce(tipo_deficiencia___tetraplejia, 
+           0L)), deficiencia_auditiva = case_when(is.na(deficiencia_sim) ~ 
+           NA_integer_, deficiencia_sim == 0L ~ 0L, TRUE ~ coalesce(tipo_deficiencia___2, 
+           0L)), deficiencia_visual = case_when(is.na(deficiencia_sim) ~ 
+           NA_integer_, deficiencia_sim == 0L ~ 0L, TRUE ~ coalesce(tipo_deficiencia___3, 
+           0L)), deficiencia_surdocegueira = case_when(is.na(deficiencia_sim) ~ 
+           NA_integer_, deficiencia_sim == 0L ~ 0L, TRUE ~ coalesce(tipo_deficiencia___4, 
+           0L)), deficiencia_multipla = case_when(is.na(deficiencia_sim) ~ 
+           NA_integer_, deficiencia_sim == 0L ~ 0L, TRUE ~ coalesce(tipo_deficiencia___5, 
+           0L)), deficiencia_intelectual = case_when(is.na(deficiencia_sim) ~ 
+           NA_integer_, deficiencia_sim == 0L ~ 0L, TRUE ~ coalesce(tipo_deficiencia___6, 
+           0L)), deficiencia_tea = case_when(is.na(deficiencia_sim) ~ 
+           NA_integer_, deficiencia_sim == 0L ~ 0L, TRUE ~ coalesce(tipo_deficiencia___7, 
+    ...
+2: rename(., genero_mulher_cis_ref = sexo___1, genero_homem_cis = sexo___2, 
+       genero_mulher_trans = sexo___3, genero_homem_trans = sexo___4, 
+       genero_nao_binario = sexo___5, genero_fluido = sexo___6, 
+       genero_agenero = sexo___7, genero_nao_respondeu = sexo___8, 
+       solteiro_ref = estado_civil___1, estado_civil_casado = estado_civil___2, 
+       estado_civil_viuvo = estado_civil___3, estado_civil_divorciado = estado_civil___4, 
+       estado_civil_uniao_estavel = estado_civil___5, etnia_nenhum_ref = cultura___6, 
+       etnia_puj_indigena = cultura___1, etnia_puj_rom = cultura___2, 
+       etnia_puj_raizal = cultura___3, etnia_puj_palenquera = cultura___4, 
+       etnia_puj_negra = cultura___5, )
+1: base_javeriana_filtrada %>% mutate(instituicao_origem = "Javeriana", 
+       contexto_institucional = "Javeriana – Colômbia", indicador_ufmg = 0L, 
+       .estrato_1 = checkbox_01(estrato_economico___1), across(all_of(colunas_numeric), 
+           ~as.numeric(.x)), deficiencia_sim = case_when(as.numeric(deficiencia) == 
+           1 ~ 1L, as.numeric(deficiencia) == 0 ~ 0L, TRUE ~ NA_integer_), 
+       deficiencia_fisica = case_when(is.na(deficiencia_sim) ~ NA_integer_, 
+           deficiencia_sim == 0L ~ 0L, TRUE ~ coalesce(tipo_deficiencia___1, 
+               0L)), deficiencia_tetraplegia = case_when(is.na(deficiencia_sim) ~ 
+           NA_integer_, deficiencia_sim == 0L ~ 0L, TRUE ~ coalesce(tipo_deficiencia___tetraplejia, 
+           0L)), deficiencia_auditiva = case_when(is.na(deficiencia_sim) ~ 
+           NA_integer_, deficiencia_sim == 0L ~ 0L, TRUE ~ coalesce(tipo_deficiencia___2, 
+           0L)), deficiencia_visual = case_when(is.na(deficiencia_sim) ~ 
+           NA_integer_, deficiencia_sim == 0L ~ 0L, TRUE ~ coalesce(tipo_deficiencia___3, 
+           0L)), deficiencia_surdocegueira = case_when(is.na(deficiencia_sim) ~ 
+           NA_integer_, deficiencia_sim == 0L ~ 0L, TRUE ~ coalesce(tipo_deficiencia___4, 
+           0L)), deficiencia_multipla = case_when(is.na(deficiencia_sim) ~ 
+           NA_integer_, deficiencia_sim == 0L ~ 0L, TRUE ~ coalesce(tipo_deficiencia___5, 
+           0L)), deficiencia_intelectual = case_when(is.na(deficiencia_sim) ~ 
+           NA_integer_, deficiencia_sim == 0L ~ 0L, TRUE ~ coalesce(tipo_deficiencia___6, 
+           0L)), deficiencia_tea = case_when(is.na(deficiencia_sim) ~ 
+    ... 
+2026-08-24 20:40:11 | ERRO NÃO TRATADO | Error in mutate(., instituicao_origem = "UFMG", contexto_institucional = "UFMG – Brasil",  : 
+  
+[1mCaused by error in `across()`:[22m
+[33m![39m Can't select columns that don't exist.
+[31m✖[39m Columns `rec_aulas_puj`, `rec_dormir_puj`, `mhc_total_14_84`, `mhc_total_0_70`, `horas_trabalho_semana`, etc. don't exist.
+ 
+35: withVisible(...elt(i))
+34: capture.output(traceback(2)) at #11
+33: (function () 
+    {
+        mensagem <- geterrmessage()
+        linha <- paste0(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), 
+            " | ERRO NÃO TRATADO | ", mensagem)
+        cat(linha, "\n", file = arquivo_log, append = TRUE)
+        captura <- capture.output(traceback(2))
+        if (length(captura) > 0L) {
+            cat(paste(captura, collapse = "\n"), "\n", file = arquivo_log, 
+                append = TRUE)
+        }
+    })()
+32: stop(fallback)
+31: signal_abort(cnd, .file)
+30: abort(message, class = error_class, parent = parent, call = error_call)
+29: (function (cnd) 
+    {
+        local_error_context(dots, i = frame[[i_sym]], mask = mask)
+        if (inherits(cnd, "dplyr:::internal_error")) {
+            parent <- error_cnd(message = bullets(cnd))
+        }
+        else {
+            parent <- cnd
+        }
+        message <- c(cnd_bullet_header(action), i = if (has_active_group_context(mask)) cnd_bullet_cur_group_label())
+        abort(message, class = error_class, parent = parent, call = error_call)
+    })(list(message = "", trace = list(call = list(base_ufmg_filtrada %>% 
+        mutate(instituicao_origem = "UFMG", contexto_institucional = "UFMG – Brasil", 
+            indicador_ufmg = 1L, across(colunas_numeric, ~as.numeric(.x))), 
+        mutate(., instituicao_origem = "UFMG", contexto_institucional = "UFMG – Brasil", 
+            indicador_ufmg = 1L, across(colunas_numeric, ~as.numeric(.x))), 
+        mutate.data.frame(., instituicao_origem = "UFMG", contexto_institucional = "UFMG – Brasil", 
+            indicador_ufmg = 1L, across(colunas_numeric, ~as.numeric(.x))), 
+        mutate_cols(.data, dplyr_quosures(...), by), withCallingHandlers(for (i in seq_along(dots)) {
+            poke_error_context(dots, i, mask = mask)
+     ...
+28: signalCondition(cnd)
+27: signal_abort(cnd)
+26: cnd_signal(cnd)
+25: (function (cnd) 
+    {
+        cnd$subscript_action <- subscript_action(type)
+        cnd$subscript_elt <- "column"
+        cnd_signal(cnd)
+    })(list(message = "", trace = list(call = list(base_ufmg_filtrada %>% 
+        mutate(instituicao_origem = "UFMG", contexto_institucional = "UFMG – Brasil", 
+            indicador_ufmg = 1L, across(colunas_numeric, ~as.numeric(.x))), 
+        mutate(., instituicao_origem = "UFMG", contexto_institucional = "UFMG – Brasil", 
+            indicador_ufmg = 1L, across(colunas_numeric, ~as.numeric(.x))), 
+        mutate.data.frame(., instituicao_origem = "UFMG", contexto_institucional = "UFMG – Brasil", 
+            indicador_ufmg = 1L, across(colunas_numeric, ~as.numeric(.x))), 
+        mutate_cols(.data, dplyr_quosures(...), by), withCallingHandlers(for (i in seq_along(dots)) {
+            poke_error_context(dots, i, mask = mask)
+            context_poke("column", old_current_column)
+            new_columns <- mutate_col(dots[[i]], data, mask, new_columns)
+        }, error = dplyr_error_handler(dots = dots, mask = mask, 
+            bullets = mutate_bullets, error_call = error_call, error_class = "dplyr:::mutate_error"), 
+            warning = dplyr_warning_handler(state = warnings_state, 
+                mask = mask, error_call = error_call)), mutate_col(dots[[i]], 
+     ...
+24: signalCondition(cnd)
+23: signal_abort(cnd, .file)
+22: abort(class = c(class, "vctrs_error_subscript"), i = i, ..., 
+        call = call) at subscript.R#150
+21: stop_subscript(class = "vctrs_error_subscript_oob", i = i, subscript_type = subscript_type, 
+        ..., call = call) at subscript-loc.R#503
+20: stop_subscript_oob(i = i, subscript_type = subscript_type, names = names, 
+        subscript_action = subscript_action, subscript_arg = subscript_arg, 
+        call = call)
+19: (function () 
+    stop_subscript_oob(i = i, subscript_type = subscript_type, names = names, 
+        subscript_action = subscript_action, subscript_arg = subscript_arg, 
+        call = call))() at subscript-loc.R#84
+18: vctrs::vec_as_location(x, n = length(vars), names = vars, call = call, 
+        arg = arg)
+17: chr_as_locations(x, vars, call = call, arg = arg)
+16: as_indices_impl(x, vars, call = call, arg = arg, strict = strict)
+15: as_indices_sel_impl(out, vars = vars, strict = strict, data = data, 
+        allow_predicates = allow_predicates, call = error_call, arg = as_label(expr))
+14: walk_data_tree(expr, data_mask, context_mask)
+13: vars_select_eval(vars, expr, strict = strict, data = x, name_spec = name_spec, 
+        uniquely_named = uniquely_named, allow_rename = allow_rename, 
+        allow_empty = allow_empty, allow_predicates = allow_predicates, 
+        type = type, error_call = error_call)
+12: withCallingHandlers(expr, vctrs_error_subscript = function(cnd) {
+        cnd$subscript_action <- subscript_action(type)
+        cnd$subscript_elt <- "column"
+        cnd_signal(cnd)
+    })
+11: with_subscript_errors(out <- vars_select_eval(vars, expr, strict = strict, 
+        data = x, name_spec = name_spec, uniquely_named = uniquely_named, 
+        allow_rename = allow_rename, allow_empty = allow_empty, allow_predicates = allow_predicates, 
+        type = type, error_call = error_call), type = type)
+10: eval_select_impl(data, names(data), as_quosure(expr, env), include = include, 
+        exclude = exclude, strict = strict, name_spec = name_spec, 
+        allow_rename = allow_rename, allow_empty = allow_empty, allow_predicates = allow_predicates, 
+        error_call = error_call, )
+9: tidyselect::eval_select(cols, data = data, error_call = error_call)
+8: across_setup(!!cols, fns = fns, names = eval_tidy(expr$.names, 
+       mask, env = env), .caller_env = env, mask = dplyr_mask, error_call = error_call, 
+       across_if_fn = across_if_fn)
+7: expand_across(dot)
+6: mutate_col(dots[[i]], data, mask, new_columns)
+5: withCallingHandlers(for (i in seq_along(dots)) {
+       poke_error_context(dots, i, mask = mask)
+       context_poke("column", old_current_column)
+       new_columns <- mutate_col(dots[[i]], data, mask, new_columns)
+   }, error = dplyr_error_handler(dots = dots, mask = mask, bullets = mutate_bullets, 
+       error_call = error_call, error_class = "dplyr:::mutate_error"), 
+       warning = dplyr_warning_handler(state = warnings_state, mask = mask, 
+           error_call = error_call))
+4: mutate_cols(.data, dplyr_quosures(...), by)
+3: mutate.data.frame(., instituicao_origem = "UFMG", contexto_institucional = "UFMG – Brasil", 
+       indicador_ufmg = 1L, across(colunas_numeric, ~as.numeric(.x)))
+2: mutate(., instituicao_origem = "UFMG", contexto_institucional = "UFMG – Brasil", 
+       indicador_ufmg = 1L, across(colunas_numeric, ~as.numeric(.x)))
+1: base_ufmg_filtrada %>% mutate(instituicao_origem = "UFMG", contexto_institucional = "UFMG – Brasil", 
+       indicador_ufmg = 1L, across(colunas_numeric, ~as.numeric(.x))) 
+2026-08-24 20:43:58 | ERRO NÃO TRATADO | Error in mutate(., mhc_itens_validos = sum(!is.na(c_across(all_of(itens)))),  : 
+  [38;5;252m
+[36mℹ[38;5;252m In row 1.[39m
+[1mCaused by error in `c_across()`:[22m
+[38;5;252m[36mℹ[38;5;252m In argument: `all_of(itens)`.[39m
+[1mCaused by error in `all_of()`:[22m
+[33m![39m Can't subset elements that don't exist.
+[31m✖[39m Elements `sm_interesse`, `sm_satisfacao`, `sm_contribuicao`, `sm_comunidade`, `sm_sociedade_melhor`, etc. don't exist.
+ 
+48: withVisible(...elt(i))
+47: capture.output(traceback(2)) at #11
+46: (function () 
+    {
+        mensagem <- geterrmessage()
+        linha <- paste0(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), 
+            " | ERRO NÃO TRATADO | ", mensagem)
+        cat(linha, "\n", file = arquivo_log, append = TRUE)
+        captura <- capture.output(traceback(2))
+        if (length(captura) > 0L) {
+            cat(paste(captura, collapse = "\n"), "\n", file = arquivo_log, 
+                append = TRUE)
+        }
+    })()
+45: stop(fallback)
+44: signal_abort(cnd, .file)
+43: abort(message, class = error_class, parent = parent, call = error_call)
+42: (function (cnd) 
+    {
+        local_error_context(dots, i = frame[[i_sym]], mask = mask)
+        if (inherits(cnd, "dplyr:::internal_error")) {
+            parent <- error_cnd(message = bullets(cnd))
+        }
+        else {
+            parent <- cnd
+        }
+        message <- c(cnd_bullet_header(action), i = if (has_active_group_context(mask)) cnd_bullet_cur_group_label())
+        abort(message, class = error_class, parent = parent, call = error_call)
+    })(list(message = c(i = "In argument: `all_of(itens)`."), parent = list(
+        message = "", trace = list(call = list(base_javeriana_filtrada %>% 
+            mutate(instituicao_origem = "Javeriana", contexto_institucional = "Javeriana – Colômbia", 
+                indicador_ufmg = 0L, .estrato_1 = checkbox_01(estrato_economico___1), 
+                across(any_of(colunas_numeric), as.numeric), .gender_woman_cis_ref = checkbox_01(sexo___1), 
+                genero_homem_cis = checkbox_01(sexo___2), genero_mulher_trans = checkbox_01(sexo___3), 
+                genero_homem_trans = checkbox_01(sexo___4), genero_nao_binario = checkbox_01(sexo___5), 
+                genero_fluido = checkbox_01(sexo___6), genero_agenero = checkbox_01(sexo___7), 
+                genero_nao_respondeu = checkbox_01(sexo___8), .marital_single_ref = checkbox_01(estado_civil___1), 
+     ...
+41: signalCondition(cnd)
+40: signal_abort(cnd, .file)
+39: rlang::abort(message, ..., call = call, use_cli_format = TRUE, 
+        .frame = .frame)
+38: cli::cli_abort(c(i = msg), call = call, parent = cnd)
+37: (function (cnd) 
+    {
+        eval_expr <- quo_squash(eval_expr)
+        if (!is_call(eval_expr) || identical(cnd[["call"]], call2(eval_expr[[1]]))) {
+            msg <- ""
+        }
+        else {
+            code <- as_label(eval_expr)
+            msg <- cli::format_inline("In argument: {.code {code}}.")
+        }
+        cli::cli_abort(c(i = msg), call = call, parent = cnd)
+    })(list(message = "", trace = list(call = list(base_javeriana_filtrada %>% 
+        mutate(instituicao_origem = "Javeriana", contexto_institucional = "Javeriana – Colômbia", 
+            indicador_ufmg = 0L, .estrato_1 = checkbox_01(estrato_economico___1), 
+            across(any_of(colunas_numeric), as.numeric), .gender_woman_cis_ref = checkbox_01(sexo___1), 
+            genero_homem_cis = checkbox_01(sexo___2), genero_mulher_trans = checkbox_01(sexo___3), 
+            genero_homem_trans = checkbox_01(sexo___4), genero_nao_binario = checkbox_01(sexo___5), 
+            genero_fluido = checkbox_01(sexo___6), genero_agenero = checkbox_01(sexo___7), 
+            genero_nao_respondeu = checkbox_01(sexo___8), .marital_single_ref = checkbox_01(estado_civil___1), 
+            estado_civil_casado = checkbox_01(estado_civil___2), 
+     ...
+36: signalCondition(cnd)
+35: signal_abort(cnd, .file)
+34: abort(class = c(class, "vctrs_error_subscript"), i = i, ..., 
+        call = call) at subscript.R#150
+33: stop_subscript(class = "vctrs_error_subscript_oob", i = i, subscript_type = subscript_type, 
+        ..., call = call) at subscript-loc.R#503
+32: stop_subscript_oob(i = i, subscript_type = subscript_type, names = names, 
+        subscript_action = subscript_action, subscript_arg = subscript_arg, 
+        call = call)
+31: (function () 
+    stop_subscript_oob(i = i, subscript_type = subscript_type, names = names, 
+        subscript_action = subscript_action, subscript_arg = subscript_arg, 
+        call = call))() at subscript-loc.R#84
+30: vctrs::vec_as_location(x, n = length(vars), names = vars, call = call, 
+        arg = arg)
+29: chr_as_locations(x, vars, call = call, arg = arg)
+28: as_indices_impl(x, vars = vars, strict = TRUE)
+27: all_of(itens)
+26: eval_tidy(as_quosure(expr, env), context_mask)
+25: withCallingHandlers(expr, error = function(cnd) {
+        eval_expr <- quo_squash(eval_expr)
+        if (!is_call(eval_expr) || identical(cnd[["call"]], call2(eval_expr[[1]]))) {
+            msg <- ""
+        }
+        else {
+            code <- as_label(eval_expr)
+            msg <- cli::format_inline("In argument: {.code {code}}.")
+        }
+        cli::cli_abort(c(i = msg), call = call, parent = cnd)
+    })
+24: with_chained_errors(eval_tidy(as_quosure(expr, env), context_mask), 
+        call = call, eval_expr = expr)
+23: eval_context(expr, context_mask, call = error_call)
+22: walk_data_tree(expr, data_mask, context_mask)
+21: vars_select_eval(vars, expr, strict = strict, data = x, name_spec = name_spec, 
+        uniquely_named = uniquely_named, allow_rename = allow_rename, 
+        allow_empty = allow_empty, allow_predicates = allow_predicates, 
+        type = type, error_call = error_call)
+20: withCallingHandlers(expr, vctrs_error_subscript = function(cnd) {
+        cnd$subscript_action <- subscript_action(type)
+        cnd$subscript_elt <- "column"
+        cnd_signal(cnd)
+    })
+19: with_subscript_errors(out <- vars_select_eval(vars, expr, strict = strict, 
+        data = x, name_spec = name_spec, uniquely_named = uniquely_named, 
+        allow_rename = allow_rename, allow_empty = allow_empty, allow_predicates = allow_predicates, 
+        type = type, error_call = error_call), type = type)
+18: eval_select_impl(data, names(data), as_quosure(expr, env), include = include, 
+        exclude = exclude, strict = strict, name_spec = name_spec, 
+        allow_rename = allow_rename, allow_empty = allow_empty, allow_predicates = allow_predicates, 
+        error_call = error_call, )
+17: tidyselect::eval_select(expr = cols, data = data, allow_rename = FALSE, 
+        error_call = error_call)
+16: c_across_setup(!!cols, mask = mask)
+15: c_across(all_of(itens))
+14: .Call(dplyr_mask_eval_all_mutate, quo, private)
+13: eval()
+12: mask$eval_all_mutate(quo)
+11: mutate_col(dots[[i]], data, mask, new_columns)
+10: withCallingHandlers(for (i in seq_along(dots)) {
+        poke_error_context(dots, i, mask = mask)
+        context_poke("column", old_current_column)
+        new_columns <- mutate_col(dots[[i]], data, mask, new_columns)
+    }, error = dplyr_error_handler(dots = dots, mask = mask, bullets = mutate_bullets, 
+        error_call = error_call, error_class = "dplyr:::mutate_error"), 
+        warning = dplyr_warning_handler(state = warnings_state, mask = mask, 
+            error_call = error_call))
+9: mutate_cols(.data, dplyr_quosures(...), by)
+8: mutate.data.frame(., mhc_itens_validos = sum(!is.na(c_across(all_of(itens)))), 
+       mhc_total_14_84 = if_else(mhc_itens_validos == 14L, sum(c_across(all_of(itens))), 
+           NA_real_), mhc_total_0_70 = if_else(mhc_itens_validos == 
+           14L, sum(c_across(all_of(itens)) - 1), NA_real_), .alto_emocional = sum(c_across(all_of(emocionais)) >= 
+           5, na.rm = TRUE), .alto_funcional = sum(c_across(all_of(funcionais)) >= 
+           5, na.rm = TRUE), .baixo_emocional = sum(c_across(all_of(emocionais)) <= 
+           2, na.rm = TRUE), .baixo_funcional = sum(c_across(all_of(funcionais)) <= 
+           2, na.rm = TRUE), mhc_codigo = case_when(mhc_itens_validos < 
+           14L ~ NA_integer_, .alto_emocional >= 1L & .alto_funcional >= 
+           6L ~ 3L, .baixo_emocional >= 1L & .baixo_funcional >= 
+           6L ~ 1L, TRUE ~ 2L), mhc_classificacao = case_when(mhc_codigo == 
+           1L ~ "Languishing", mhc_codigo == 2L ~ "Moderate", mhc_codigo == 
+           3L ~ "Flourishing", TRUE ~ NA_character_))
+7: mutate(., mhc_itens_validos = sum(!is.na(c_across(all_of(itens)))), 
+       mhc_total_14_84 = if_else(mhc_itens_validos == 14L, sum(c_across(all_of(itens))), 
+           NA_real_), mhc_total_0_70 = if_else(mhc_itens_validos == 
+           14L, sum(c_across(all_of(itens)) - 1), NA_real_), .alto_emocional = sum(c_across(all_of(emocionais)) >= 
+           5, na.rm = TRUE), .alto_funcional = sum(c_across(all_of(funcionais)) >= 
+           5, na.rm = TRUE), .baixo_emocional = sum(c_across(all_of(emocionais)) <= 
+           2, na.rm = TRUE), .baixo_funcional = sum(c_across(all_of(funcionais)) <= 
+           2, na.rm = TRUE), mhc_codigo = case_when(mhc_itens_validos < 
+           14L ~ NA_integer_, .alto_emocional >= 1L & .alto_funcional >= 
+           6L ~ 3L, .baixo_emocional >= 1L & .baixo_funcional >= 
+           6L ~ 1L, TRUE ~ 2L), mhc_classificacao = case_when(mhc_codigo == 
+           1L ~ "Languishing", mhc_codigo == 2L ~ "Moderate", mhc_codigo == 
+           3L ~ "Flourishing", TRUE ~ NA_character_))
+6: ungroup(.)
+5: select(., -.alto_emocional, -.alto_funcional, -.baixo_emocional, 
+       -.baixo_funcional)
+4: df %>% rowwise() %>% mutate(mhc_itens_validos = sum(!is.na(c_across(all_of(itens)))), 
+       mhc_total_14_84 = if_else(mhc_itens_validos == 14L, sum(c_across(all_of(itens))), 
+           NA_real_), mhc_total_0_70 = if_else(mhc_itens_validos == 
+           14L, sum(c_across(all_of(itens)) - 1), NA_real_), .alto_emocional = sum(c_across(all_of(emocionais)) >= 
+           5, na.rm = TRUE), .alto_funcional = sum(c_across(all_of(funcionais)) >= 
+           5, na.rm = TRUE), .baixo_emocional = sum(c_across(all_of(emocionais)) <= 
+           2, na.rm = TRUE), .baixo_funcional = sum(c_across(all_of(funcionais)) <= 
+           2, na.rm = TRUE), mhc_codigo = case_when(mhc_itens_validos < 
+           14L ~ NA_integer_, .alto_emocional >= 1L & .alto_funcional >= 
+           6L ~ 3L, .baixo_emocional >= 1L & .baixo_funcional >= 
+           6L ~ 1L, TRUE ~ 2L), mhc_classificacao = case_when(mhc_codigo == 
+           1L ~ "Languishing", mhc_codigo == 2L ~ "Moderate", mhc_codigo == 
+           3L ~ "Flourishing", TRUE ~ NA_character_)) %>% ungroup() %>% 
+       select(-.alto_emocional, -.alto_funcional, -.baixo_emocional, 
+           -.baixo_funcional) at #21
+3: calcular_mhc(.)
+2: select(., -starts_with("."))
+1: base_javeriana_filtrada %>% mutate(instituicao_origem = "Javeriana", 
+       contexto_institucional = "Javeriana – Colômbia", indicador_ufmg = 0L, 
+       .estrato_1 = checkbox_01(estrato_economico___1), across(any_of(colunas_numeric), 
+           as.numeric), .gender_woman_cis_ref = checkbox_01(sexo___1), 
+       genero_homem_cis = checkbox_01(sexo___2), genero_mulher_trans = checkbox_01(sexo___3), 
+       genero_homem_trans = checkbox_01(sexo___4), genero_nao_binario = checkbox_01(sexo___5), 
+       genero_fluido = checkbox_01(sexo___6), genero_agenero = checkbox_01(sexo___7), 
+       genero_nao_respondeu = checkbox_01(sexo___8), .marital_single_ref = checkbox_01(estado_civil___1), 
+       estado_civil_casado = checkbox_01(estado_civil___2), estado_civil_viuvo = checkbox_01(estado_civil___3), 
+       estado_civil_divorciado = checkbox_01(estado_civil___4), 
+       estado_civil_uniao_estavel = checkbox_01(estado_civil___5), 
+       .eth_puj_none_ref = checkbox_01(cultura___6), etnia_puj_indigena = checkbox_01(cultura___1), 
+       etnia_puj_rom = checkbox_01(cultura___2), etnia_puj_raizal = checkbox_01(cultura___3), 
+       etnia_puj_palenquera = checkbox_01(cultura___4), etnia_puj_negra = checkbox_01(cultura___5), 
+       deficiencia_sim = case_when(as.numeric(deficiencia) == 1 ~ 
+           1L, as.numeric(deficiencia) == 0 ~ 0L, TRUE ~ NA_integer_), 
+       deficiencia_detalhada = case_when(deficiencia_sim == 1L ~ 
+           "Sim", deficiencia_sim == 0L ~ "Não", TRUE ~ NA_character_), 
+       deficiencia_fisica = case_when(is.na(deficiencia_sim) ~ NA_integer_, 
+           deficiencia_sim == 0L ~ 0L, TRUE ~ coalesce(checkbox_01(tipo_deficiencia___1), 
+    ... 
