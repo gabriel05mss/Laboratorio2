@@ -1,0 +1,738 @@
+---
+title: "Analise estatística das práticas de lazer com a percepção de saúde mental positiva dos jovens universitários da Universidade Federal de Minas Gerais e Universidade Pontifícia Javeriana de Bogotá"
+author: "Gabriel Moreira"
+date: today
+lang: pt
+format:
+  pdf:
+    toc: true
+    toc-depth: 2
+    number-sections: true
+    documentclass: scrartcl
+    classoption:
+      - DIV=11
+      - numbers=noendperiod
+      - titlepage
+header-includes:
+  - \usepackage{float}
+  - \floatplacement{table}{H}
+  - \floatplacement{figure}{H}
+---
+
+\newpage
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE,
+  fig.width = 10,
+  fig.height = 6,
+  fig.align = "center"
+)
+```
+
+# Introdução
+
+O lazer constitui uma dimensão central da vida universitária, associada à construção de sentido, pertencimento e bem-estar. Nesse contexto, a saúde mental positiva — entendida como a presença de bem-estar emocional, psicológico e social (Keyes), e não apenas a ausência de transtornos — tem se mostrado sensível ao modo como os indivíduos organizam seu tempo livre.
+
+Este estudo tem como objetivo analisar as associações entre práticas de lazer e a percepção de saúde mental positiva de jovens universitários da Universidade Federal de Minas Gerais (UFMG, Brasil) e da Pontifícia Universidade Javeriana (Colômbia), buscando identificar em que medida diferentes formas de lazer se relacionam com os níveis de florescimento psicológico dos estudantes.
+
+```{r carregar pacotes}
+library(tidyverse)
+library(ggplot2)
+library(patchwork)
+library(kableExtra)
+library(gt)
+library(dplyr)
+library(purrr)
+library(stringr)
+library(knitr)
+library(rstatix)
+```
+
+```{r carregar dados}
+df <- readRDS("data/base_unificada.rds")
+
+#filtros bases etnia/cor
+etnia_cor_colombia <- df %>%
+  filter(sistema_etnia_cor == "Pertencimento étnico – Colômbia")
+  
+etnia_cor_brasil <- df %>%
+  filter(sistema_etnia_cor == "Cor/raça – Brasil")
+
+df_trabalho <- df %>%
+  filter(trabalho_detalhado == "Sim")
+
+
+df_acessos_javeriana <- df %>%
+  filter(instituicao_origem == "Javeriana") %>%
+  select(
+    instituicao_origem,
+    starts_with("acesso_puj")
+  ) %>%
+  rename_with(
+    ~ str_replace(.x, "^acesso_puj", "acesso"),
+    starts_with("acesso_puj")
+  )
+
+df_acessos_ufmg <- df %>%
+  filter(instituicao_origem != "Javeriana") %>%
+  select(
+    instituicao_origem,
+    starts_with("acesso_ufmg")
+  ) %>%
+  rename_with(
+    ~ str_replace(.x, "^acesso_ufmg", "acesso"),
+    starts_with("acesso_ufmg")
+  ) %>%
+  rename(
+    "acesso_cinema" = "acesso_cinemas",
+    "acesso_teatro" = "acesso_teatros"
+  )
+
+```
+
+# Caracterização da amostra
+
+## Contexto Institucional
+
+A amostra é composta por 227 participantes, sendo 55,07% da UFMG (Brasil) e 44,93% da Javeriana (Colômbia).
+
+```{r instituicao de origem}
+df %>%
+  count(contexto_institucional) %>%
+  mutate(freq_relativa = n / sum(n) * 100) %>%
+  rename(frequencia = n) %>%
+  gt() %>%
+  fmt_number(columns = freq_relativa, decimals = 2) %>%
+  cols_label(
+    contexto_institucional = "Contexto institucional",
+    frequencia = "Frequência",
+    freq_relativa = "Frequência relativa (%)"
+  ) %>%
+  grand_summary_rows(
+    columns = c(frequencia, freq_relativa),
+    fns = list(Total = ~ sum(.))
+  ) %>%
+  tab_header(
+    title = "Tabela Instituição de origem",
+    subtitle = "Universidade - País"
+  )
+```
+
+## Idade
+
+A idade média dos participantes foi de 21,71 anos (DP = 2,70), variando entre 18 e 29 anos.
+
+```{r idade}
+df %>%
+  summarise(
+    Media = mean(idade, na.rm = TRUE),
+    DP = sd(idade, na.rm = TRUE),
+    Minimo = min(idade, na.rm = TRUE),
+    Maximo = max(idade, na.rm = TRUE),
+    N = n()
+  ) %>%
+  gt() %>%
+  fmt_number(columns = c(Media, DP, Minimo, Maximo), decimals = 2) %>%
+  cols_label(
+    Media = "Média",
+    DP = "Desvio padrão",
+    Minimo = "Mínimo",
+    Maximo = "Máximo",
+    N = "N"
+  ) %>%
+  tab_header(
+    title = "Distribuição Idade",
+    subtitle = "Medidas descritivas"
+  )
+```
+
+## Genêro
+
+A amostra é majoritariamente composta por mulheres cisgênero (48,90%) e homens cisgênero (44,93%), com uma pequena proporção reportando diversidade de identidades (4,41%) ou preferindo não responder (1,76%).
+
+```{r genero respondente}
+df %>%
+  count(genero_modelo) %>%
+  mutate(
+    genero_modelo = coalesce(genero_modelo, "Prefiro não responder"),
+    freq_relativa = n / sum(n) * 100
+  ) %>%
+  rename(frequencia = n) %>%
+  gt() %>%
+  fmt_number(columns = freq_relativa, decimals = 2) %>%
+  cols_label(
+    genero_modelo = "Genêro",
+    frequencia = "Frequência",
+    freq_relativa = "Frequência relativa (%)"
+  ) %>%
+  grand_summary_rows(
+    columns = c(frequencia, freq_relativa),
+    fns = list(Total = ~ sum(.))
+  ) %>%
+  tab_header(
+    title = "Distribuição de Genêro"
+  )
+```
+
+## Estado Civil
+
+A grande maioria dos participantes é solteira (92,95%), com uma minoria em união estável (6,17%).
+
+```{r estado civil}
+df %>%
+  count(estado_civil_detalhado) %>%
+  mutate(freq_relativa = n / sum(n) * 100) %>%
+  rename(frequencia = n) %>%
+  gt() %>%
+  fmt_number(columns = freq_relativa, decimals = 2) %>%
+  cols_label(
+    estado_civil_detalhado = "Estado Civil",
+    frequencia = "Frequência",
+    freq_relativa = "Frequência relativa (%)"
+  ) %>%
+  grand_summary_rows(
+    columns = c(frequencia, freq_relativa),
+    fns = list(Total = ~ sum(.))
+  ) %>%
+  tab_header(
+    title = "Distribuição Estado Civil"
+  )
+```
+
+## Etnia/Cor
+
+Como os sistemas de classificação étnica diferem entre os dois países, essa variável foi analisada separadamente: na Colômbia predomina a ausência de filiação étnica declarada, enquanto no Brasil predomina a autodeclaração como branca, seguida de parda e preta.
+
+```{r etinia cor}
+plot_etnia_cor_colombia<- ggplot(etnia_cor_colombia, aes(x = fct_inorder(etnia_cor_detalhada), y = after_stat(count / sum(count) * 100))) +
+  geom_bar(show.legend = FALSE) +
+  labs(
+    title = "Distribuição de Etnia/cor",
+    x = "Etnia/Cor",
+    y = "Porcentagem (%)",
+    subtitle = "Pertencimento étnico – Colômbia"
+  ) +
+  scale_y_continuous(labels = scales::label_percent(scale = 1)) +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(angle = 0, hjust = 1),
+    plot.title = element_text(size = 14, face = "bold"),
+    plot.subtitle = element_text(size = 11, color = "gray50")
+  )
+
+plot_etnia_cor_brasil<- ggplot(etnia_cor_brasil, aes(x = fct_inorder(etnia_cor_detalhada), y = after_stat(count / sum(count) * 100))) +
+  geom_bar(show.legend = FALSE) +
+  labs(
+    title = "Distribuição de Etnia/cor",
+    x = "Etnia/Cor",
+    y = "Porcentagem (%)",
+    subtitle = "Cor/raça – Brasil"
+  ) +
+  scale_y_continuous(labels = scales::label_percent(scale = 1)) +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(angle = 0, hjust = 1),
+    plot.title = element_text(size = 14, face = "bold"),
+    plot.subtitle = element_text(size = 11, color = "gray50")
+  )
+
+plot_etnia_cor_colombia + plot_etnia_cor_brasil
+```
+
+## Nivel Academico
+
+Quase todos os participantes estão em nível de graduação (96,48%), com pequenas parcelas em mestrado (3,08%) e especialização (0,44%).
+
+```{r nivel academico}
+df %>%
+  count(nivel_academico_detalhado) %>%
+  mutate(freq_relativa = n / sum(n) * 100) %>%
+  rename(frequencia = n) %>%
+  gt() %>%
+  fmt_number(columns = freq_relativa, decimals = 2) %>%
+  cols_label(
+    nivel_academico_detalhado = "Nivel academico",
+    frequencia = "Frequência",
+    freq_relativa = "Frequência relativa (%)"
+  ) %>%
+  grand_summary_rows(
+    columns = c(frequencia, freq_relativa),
+    fns = list(Total = ~ sum(.))
+  ) %>%
+  tab_header(
+    title = "Distribuição Nivel Academico"
+  )
+```
+
+## Deficiencia
+
+A maior parte da amostra (96,04%) não se declara pessoa com deficiência.
+
+```{r deficiencia}
+df %>%
+  count(deficiencia_detalhada) %>%
+  mutate(freq_relativa = n / sum(n) * 100) %>%
+  rename(frequencia = n) %>%
+  gt() %>%
+  fmt_number(columns = freq_relativa, decimals = 2) %>%
+  cols_label(
+    deficiencia_detalhada = "Deficiente",
+    frequencia = "Frequência",
+    freq_relativa = "Frequência relativa (%)"
+  ) %>%
+  grand_summary_rows(
+    columns = c(frequencia, freq_relativa),
+    fns = list(Total = ~ sum(.))
+  ) %>%
+  tab_header(
+    title = "Distribuição Deficiencia"
+  )
+
+```
+
+# Análises
+
+## Tipo de Moradia
+
+A maioria dos participantes reside com familiares ou parceiro(a) (81,5%), enquanto uma minoria vive sozinha (6,6%) ou em moradia compartilhada/coletiva (11,9%).
+```{r moradia}
+ggplot(df, aes(x = fct_inorder(moradia_modelo))) +
+  geom_bar(show.legend = FALSE) +
+  labs(
+    title = "Distribuição do modelo de moradia",
+    x = "modelo de moradia",
+    y = "Frequência",
+    subtitle = "Contagem modelo de moradia"
+  ) +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(angle = 0, hjust = 1),
+    plot.title = element_text(size = 14, face = "bold"),
+    plot.subtitle = element_text(size = 11, color = "gray50")
+  )
+```
+
+## Trabalho
+
+A amostra está dividida de forma quase equilibrada entre estudantes que trabalham e os que não trabalham. Entre os que exercem atividade remunerada, a maior concentração está entre 20 e 40 horas semanais.
+```{r trabalho}
+trabalho <- ggplot(df, aes(x = fct_inorder(trabalho_detalhado))) +
+  geom_bar(show.legend = FALSE) +
+  labs(
+    title = "Distribuição do estudantes que trabalham",
+    x = "Trabalho",
+    y = "Frequência",
+    subtitle = "Contagem trabalhadores entre os respondentes"
+  ) +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(angle = 0, hjust = 1),
+    plot.title = element_text(size = 14, face = "bold"),
+    plot.subtitle = element_text(size = 11, color = "gray50")
+  )
+
+horas_trabalho <- ggplot(df_trabalho, aes(x = horas_trabalho_semana)) +
+  geom_histogram(bins = 10) +
+  labs(
+    title = "Distribuição horas trabalhadas",
+    x = "Tempo em horas",
+    subtitle = "Horas/Semana"
+  ) +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(angle = 0, hjust = 1),
+    plot.title = element_text(size = 14, face = "bold"),
+    plot.subtitle = element_text(size = 11, color = "gray50")
+  )
+
+trabalho + horas_trabalho
+```
+
+## Testes de hipoteses
+
+Para comparar as duas instituições quanto às práticas de lazer e aos indicadores de saúde mental positiva, foi aplicado o teste de Mann–Whitney. Os resultados indicam que os estudantes da Javeriana reportam, de forma consistente, medianas mais altas em quase todos os itens de saúde mental positiva e em boa parte das práticas de lazer, com diferenças estatisticamente significativas (p < 0,05). Não foram observadas diferenças significativas entre as instituições para rec_redes_sociais, rec_jogos_eletronicos, rec_filmes e rec_fumar (p > 0,10), sugerindo que essas práticas têm frequência semelhante independentemente do contexto institucional.
+```{r teste}
+grupo <- "instituicao_origem"
+
+vars <- names(
+  df %>% 
+    select(
+      starts_with("sm"),
+      starts_with("rec"),
+      -rec_dormir_puj,
+      -rec_ler_ufmg,
+      -rec_aulas_puj,
+      -rec_festas_ufmg
+    )
+)
+
+df_long <- df %>%
+  pivot_longer(
+    cols = all_of(vars),
+    names_to = "variavel",
+    values_to = "valor"
+  )
+
+df_prop <- df_long %>%
+  count(variavel, instituicao_origem, valor) %>%
+  group_by(variavel, instituicao_origem) %>%
+  mutate(prop = n / sum(n))
+
+ggplot(
+  df_prop,
+  aes(
+    x = factor(valor),
+    y = prop,
+    fill = instituicao_origem
+  )
+) +
+  geom_col(position = "dodge") +
+  facet_wrap(
+    ~ variavel,
+    scales = "free_x",
+    ncol = 5
+  ) +
+  scale_y_continuous(labels = scales::percent_format()) +
+  theme_minimal() +
+  labs(
+    x = NULL,
+    y = "Proporção",
+    fill = "Instituição"
+  )
+```
+```{r}
+resultado <- map_dfr(
+  vars,
+  function(var) {
+
+    dados <- df %>%
+      select(all_of(grupo), all_of(var)) %>%
+      filter(
+        !is.na(.data[[grupo]]),
+        !is.na(.data[[var]])
+      )
+
+    grupos <- unique(dados[[grupo]])
+
+    if (length(grupos) != 2) {
+      return(NULL)
+    }
+
+    teste <- wilcox.test(
+      dados[[var]] ~ dados[[grupo]],
+      exact = FALSE
+    )
+
+    tibble(
+      variavel = var,
+      mediana_g1 = median(
+        dados[[var]][dados[[grupo]] == grupos[1]],
+        na.rm = TRUE
+      ),
+      mediana_g2 = median(
+        dados[[var]][dados[[grupo]] == grupos[2]],
+        na.rm = TRUE
+      ),
+      W = unname(teste$statistic),
+      p_valor = teste$p.value
+    )
+  }
+)
+
+resultado %>%
+  gt() %>%
+  tab_header(
+    title = "Teste de Mann–Whitney",
+    subtitle = "Comparação entre instituições"
+  ) %>%
+  fmt_number(
+    columns = c(
+      mediana_g1,
+      mediana_g2
+    ),
+    decimals = 0
+  ) %>%
+  fmt_number(
+    columns = c(
+      p_valor
+    ),
+    decimals = 4
+  ) %>%
+  cols_label(
+    variavel = "Variável",
+    mediana_g1 = "Med G1",
+    mediana_g2 = "Med G2",
+    W = "W",
+    p_valor = "p-valor"
+  ) %>%
+  cols_align(
+    align = "center",
+    columns = everything()
+  ) %>%
+  tab_source_note(
+    source_note = md(
+      "Med G1 e Med G2 são as medianas da Javeriana e UFMG respectivamente"
+    )
+  )
+```
+
+## Horas universidade
+
+A distribuição das horas semanais de permanência na universidade mostra que os estudantes da Javeriana tendem a passar mais tempo na instituição do que os da UFMG, com maior dispersão e uma mediana mais alta, como evidenciado pelos gráficos de densidade e de caixa.
+```{r}
+hist_horas <- ggplot(
+  df,
+  aes(
+    x = horas_universidade_semana,
+    fill = .data[[grupo]],
+    color = .data[[grupo]]
+  )
+) +
+  geom_density(
+    alpha = 0.25,
+    linewidth = 1
+  ) +
+  geom_rug(
+    alpha = 0.15
+  ) +
+  theme_classic() +
+  labs(
+    title = "Distribuição de horas na Universidade",
+    x = "Horas",
+    subtitle = "Horas/semana"
+  )
+
+bx_horas <- ggplot(
+  df,
+  aes(
+    y = horas_universidade_semana,
+    x = instituicao_origem,
+    fill = .data[[grupo]],
+    color = .data[[grupo]]
+  )
+) +
+  geom_boxplot() +
+  geom_rug(
+    alpha = 0.15
+  ) +
+  theme_classic() +
+  labs(
+    title = "Distribuição de horas na Universidade",
+    x = "Instituição",
+    subtitle = "Horas/semana"
+  )
+
+hist_horas + bx_horas
+```
+
+## Shapiro_wilk horas
+
+O teste de Shapiro-Wilk foi aplicado para verificar a normalidade da variável horas_universidade_semana. Os resultados (p < 0,001 tanto para Javeriana quanto para UFMG, e também na amostra total) indicam rejeição da hipótese de normalidade, justificando o uso de um teste não paramétrico (Wilcoxon) para a comparação entre os grupos.
+```{r}
+var <- "horas_universidade_semana"
+
+resultado_shapiro <- df %>%
+  filter(
+    !is.na(.data[[var]]),
+    !is.na(.data[[grupo]])
+  ) %>%
+  group_by(.data[[grupo]]) %>%
+  summarise(
+    n = n(),
+    W = unname(shapiro.test(.data[[var]])$statistic),
+    p_valor = shapiro.test(.data[[var]])$p.value,
+    .groups = "drop"
+  ) %>%
+  rename(grupo_resultado = all_of(grupo))
+
+resultado_total <- df %>%
+  filter(
+    !is.na(.data[[var]]),
+    !is.na(.data[[grupo]])
+  ) %>%
+  summarise(
+    grupo_resultado = "Total",
+    n = n(),
+    W = unname(shapiro.test(.data[[var]])$statistic),
+    p_valor = shapiro.test(.data[[var]])$p.value
+  )
+
+resultado_shapiro <- bind_rows(
+  resultado_shapiro,
+  resultado_total
+)
+
+resultado_shapiro %>%
+  gt() %>%
+  fmt_number(
+    columns = c(
+      W,
+      p_valor
+    ),
+    decimals = 5
+  ) %>%
+  tab_header(
+    title = "Teste de Shapiro-Wilk",
+    subtitle = "Teste para normalidade"
+  )
+```
+
+## Teste de Wilcoxon
+
+O teste de Wilcoxon confirmou uma diferença estatisticamente significativa entre as instituições (W = 7.673,5; p = 0,0082): os estudantes da Javeriana apresentam mediana de horas semanais na universidade mais alta (25,5h) do que os da UFMG (20,0h).
+```{r}
+var <- "horas_universidade_semana"
+grupo <- "instituicao_origem"
+
+teste <- wilcox.test(
+  df[[var]] ~ df[[grupo]]
+)
+
+grupos <- unique(df[[grupo]])
+
+resultado <- tibble(
+  Variável = var,
+  `Grupo 1` = grupos[1],
+  `Mediana G1` = median(
+    df[[var]][df[[grupo]] == grupos[1]],
+    na.rm = TRUE
+  ),
+  `Grupo 2` = grupos[2],
+  `Mediana G2` = median(
+    df[[var]][df[[grupo]] == grupos[2]],
+    na.rm = TRUE
+  ),
+  `W` = unname(teste$statistic),
+  `p-valor` = teste$p.value
+)
+
+resultado %>%
+  gt() %>%
+  tab_header(
+    title = "Teste de Wilcoxon",
+    subtitle = "Comparação de horas de estudo semanal entre as instituições"
+  ) %>%
+  fmt_number(
+    columns = c(`Mediana G1`, `Mediana G2`),
+    decimals = 1
+  ) %>%
+  fmt_number(
+    columns = W,
+    decimals = 1
+  ) %>%
+  fmt_number(
+    columns = `p-valor`,
+    decimals = 4
+  ) %>%
+  cols_align(
+    align = "center",
+    columns = everything()
+  ) %>%
+  tab_source_note(
+    source_note = "Teste de Wilcoxon rank-sum com correção de continuidade."
+  )
+
+```
+
+## Classificação MHC
+
+A variável categorizada segundo os critérios de Keyes, mostra que a maior parte da amostra foi classificada como Moderate (moderado) (~53%), seguida por Flourishing (florescendo) (~42%), com uma pequena minoria em Languishing (definhando) (~6%).
+```{r}
+ggplot(
+  df,
+  aes(
+    x = factor(
+      mhc_classificacao,
+      levels = c(
+        "Languishing",
+        "Moderate",
+        "Flourishing"
+      )
+    )
+  )
+) +
+  geom_bar() +
+  theme_classic() + 
+  labs(
+    title = "Distribuição de horas na Universidade",
+    x = "classificação",
+    subtitle = "Horas/semana"
+  )
+```
+
+```{r}
+# vars <- c("mhc_classificacao", vars)
+# matriz_cramer <- matrix(
+#   NA_real_,
+#   nrow = length(vars),
+#   ncol = length(vars),
+#   dimnames = list(vars, vars)
+# )
+# 
+# for(i in seq_along(vars)) {
+# 
+#   for(j in i:length(vars)) {
+# 
+#     if(i == j) {
+# 
+#       matriz_cramer[i, j] <- 1
+# 
+#     } else {
+# 
+#       dados <- df %>%
+#         select(all_of(c(vars[i], vars[j]))) %>%
+#         drop_na()
+# 
+#       tab <- table(
+#         dados[[1]],
+#         dados[[2]]
+#       )
+# 
+#       v <- cramer_v(tab)
+# 
+#       matriz_cramer[i, j] <- v
+#       matriz_cramer[j, i] <- v
+#     }
+#   }
+# }
+# 
+# matriz_cramer <- as.data.frame(matriz_cramer)
+# 
+# library(tidyr)
+# 
+# matriz_cramer %>%
+#   rownames_to_column("var1") %>%
+#   pivot_longer(
+#     -var1,
+#     names_to = "var2",
+#     values_to = "v_cramer"
+#   ) %>%
+#   ggplot(
+#     aes(
+#       x = var1,
+#       y = var2,
+#       fill = v_cramer
+#     )
+#   ) +
+#   geom_tile() +
+#   geom_text(
+#     aes(label = round(v_cramer, 2)),
+#     size = 2.5
+#   ) +
+#   scale_fill_viridis_c(
+#     limits = c(0, 1)
+#   ) +
+#   coord_equal() +
+#   theme_minimal() +
+#   theme(
+#     axis.text.x = element_text(
+#       angle = 45,
+#       hjust = 1
+#     )
+#   )
+```
+
