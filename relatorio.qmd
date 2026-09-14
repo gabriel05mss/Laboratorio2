@@ -356,6 +356,8 @@ trabalho + horas_trabalho
 
 Para comparar as duas instituições quanto às práticas de lazer e aos indicadores de saúde mental positiva, foi aplicado o teste de Mann–Whitney. Os resultados indicam que os estudantes da Javeriana reportam, de forma consistente, medianas mais altas em quase todos os itens de saúde mental positiva e em boa parte das práticas de lazer, com diferenças estatisticamente significativas (p < 0,05). Não foram observadas diferenças significativas entre as instituições para rec_redes_sociais, rec_jogos_eletronicos, rec_filmes e rec_fumar (p > 0,10), sugerindo que essas práticas têm frequência semelhante independentemente do contexto institucional.
 ```{r teste}
+#| fig-width: 12
+#| fig-height: 20
 grupo <- "instituicao_origem"
 
 vars <- names(
@@ -380,10 +382,17 @@ df_long <- df %>%
 df_prop <- df_long %>%
   count(variavel, instituicao_origem, valor) %>%
   group_by(variavel, instituicao_origem) %>%
-  mutate(prop = n / sum(n))
+  mutate(prop = n / sum(n)) %>%
+  ungroup()
+
+df_prop_sm <- df_prop %>%
+  filter(str_starts(variavel, "sm"))
+
+df_prop_rec <- df_prop %>%
+  filter(str_starts(variavel, "rec"))
 
 ggplot(
-  df_prop,
+  df_prop_sm,
   aes(
     x = factor(valor),
     y = prop,
@@ -394,16 +403,47 @@ ggplot(
   facet_wrap(
     ~ variavel,
     scales = "free_x",
-    ncol = 5
+    ncol = 2
   ) +
   scale_y_continuous(labels = scales::percent_format()) +
   theme_minimal() +
   labs(
+    title = "Atividades Significativas (SM)",
+    x = NULL,
+    y = "Proporção",
+    fill = "Instituição"
+  )
+
+```
+
+```{r}
+#| fig-width: 12
+#| fig-height: 20
+ggplot(
+  df_prop_rec,
+  aes(
+    x = factor(valor),
+    y = prop,
+    fill = instituicao_origem
+  )
+) +
+  geom_col(position = "dodge") +
+  facet_wrap(
+    ~ variavel,
+    scales = "free_x",
+    ncol = 2
+  ) +
+  scale_y_continuous(labels = scales::percent_format()) +
+  theme_minimal() +
+  labs(
+    title = "Recursos de Lazer (REC)",
     x = NULL,
     y = "Proporção",
     fill = "Instituição"
   )
 ```
+
+
 ```{r}
 resultado <- map_dfr(
   vars,
@@ -450,16 +490,11 @@ resultado %>%
     subtitle = "Comparação entre instituições"
   ) %>%
   fmt_number(
-    columns = c(
-      mediana_g1,
-      mediana_g2
-    ),
+    columns = c(mediana_g1, mediana_g2),
     decimals = 0
   ) %>%
   fmt_number(
-    columns = c(
-      p_valor
-    ),
+    columns = p_valor,
     decimals = 4
   ) %>%
   cols_label(
@@ -468,6 +503,16 @@ resultado %>%
     mediana_g2 = "Med G2",
     W = "W",
     p_valor = "p-valor"
+  ) %>%
+  tab_style(
+    style = list(
+      cell_fill(color = "#FDE2E2"),
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = p_valor,
+      rows = p_valor >= 0.05
+    )
   ) %>%
   cols_align(
     align = "center",
