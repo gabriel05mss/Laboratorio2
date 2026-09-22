@@ -50,6 +50,10 @@ library(purrr)
 library(stringr)
 library(knitr)
 library(rstatix)
+library(ordinal)
+library(VGAM)
+library(gtsummary)
+
 ```
 
 ```{r carregar dados}
@@ -708,76 +712,87 @@ ggplot(
     subtitle = "Horas/semana"
   )
 ```
+# Modelagem
 
 ```{r}
-# vars <- c("mhc_classificacao", vars)
-# matriz_cramer <- matrix(
-#   NA_real_,
-#   nrow = length(vars),
-#   ncol = length(vars),
-#   dimnames = list(vars, vars)
-# )
-# 
-# for(i in seq_along(vars)) {
-# 
-#   for(j in i:length(vars)) {
-# 
-#     if(i == j) {
-# 
-#       matriz_cramer[i, j] <- 1
-# 
-#     } else {
-# 
-#       dados <- df %>%
-#         select(all_of(c(vars[i], vars[j]))) %>%
-#         drop_na()
-# 
-#       tab <- table(
-#         dados[[1]],
-#         dados[[2]]
-#       )
-# 
-#       v <- cramer_v(tab)
-# 
-#       matriz_cramer[i, j] <- v
-#       matriz_cramer[j, i] <- v
-#     }
-#   }
-# }
-# 
-# matriz_cramer <- as.data.frame(matriz_cramer)
-# 
-# library(tidyr)
-# 
-# matriz_cramer %>%
-#   rownames_to_column("var1") %>%
-#   pivot_longer(
-#     -var1,
-#     names_to = "var2",
-#     values_to = "v_cramer"
-#   ) %>%
-#   ggplot(
-#     aes(
-#       x = var1,
-#       y = var2,
-#       fill = v_cramer
-#     )
-#   ) +
-#   geom_tile() +
-#   geom_text(
-#     aes(label = round(v_cramer, 2)),
-#     size = 2.5
-#   ) +
-#   scale_fill_viridis_c(
-#     limits = c(0, 1)
-#   ) +
-#   coord_equal() +
-#   theme_minimal() +
-#   theme(
-#     axis.text.x = element_text(
-#       angle = 45,
-#       hjust = 1
-#     )
-#   )
+df$mhc_classificacao <- factor(
+  df$mhc_classificacao,
+  levels = c("Languishing", "Moderate", "Flourishing"),
+  ordered = TRUE
+)
+
+df <- df %>%
+  mutate(
+    across(
+      starts_with("rec"),
+      ~ factor(
+        .x,
+        levels = as.character(1:10),
+        ordered = F
+      )
+    )
+  )
+
+modelo_ordinal <- clm(
+  mhc_classificacao ~
+    idade +
+    genero_modelo +
+    trabalho_sim +
+    horas_universidade_semana +
+    rec_caminhar +
+    rec_casal +
+    rec_contemplar +
+    rec_treinamento +
+    rec_competicoes +
+    rec_comer_social +
+    rec_redes_sociais +
+    rec_jogos_eletronicos +
+    rec_filmes +
+    rec_academia +
+    rec_assistir_treinos +
+    rec_danca,
+  data = df)
+
+tbl_regression(modelo_ordinal, exponentiate = TRUE)
+
+table(df$mhc_classificacao, df$rec_danca)
+
+
+df2 <- df %>%
+  mutate(
+    across(
+      starts_with("rec"),
+      ~ case_when(
+        .x %in% c("1", "2")   ~ "1",
+        .x %in% c("3", "4")   ~ "2",
+        .x %in% c("5", "6")   ~ "3",
+        .x %in% c("7", "8")   ~ "4",
+        .x %in% c("9", "10")  ~ "5",
+        TRUE ~ NA_character_
+      )
+    )
+  )
+
+modelo_ordinal2 <- clm(
+  mhc_classificacao ~
+    idade +
+    genero_modelo +
+    trabalho_sim +
+    horas_universidade_semana +
+    rec_caminhar +
+    rec_casal +
+    rec_contemplar +
+    rec_treinamento +
+    rec_competicoes +
+    rec_comer_social +
+    rec_redes_sociais +
+    rec_jogos_eletronicos +
+    rec_filmes +
+    rec_academia +
+    rec_assistir_treinos +
+    rec_danca,
+  data = df2)
+
+tbl_regression(modelo_ordinal2, exponentiate = TRUE)
 ```
 
