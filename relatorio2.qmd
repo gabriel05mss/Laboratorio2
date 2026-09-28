@@ -17,6 +17,13 @@ header-includes:
   - \usepackage{float}
   - \floatplacement{table}{H}
   - \floatplacement{figure}{H}
+  - \usepackage{booktabs}
+  - \usepackage{longtable}
+  - \usepackage{array}
+  - \usepackage{multirow}
+  - \usepackage{threeparttable}
+  - \usepackage{threeparttablex}
+  - \usepackage{makecell}
 ---
 
 \newpage
@@ -35,9 +42,9 @@ knitr::opts_chunk$set(
 
 # Introdução
 
-O lazer constitui uma dimensão central da vida universitária, associada à construção de sentido, pertencimento e bem-estar. Nesse contexto, a saúde mental positiva, entendida como a presença de bem-estar emocional, psicológico e social (Keyes), e não apenas a ausência de transtornos,tem se mostrado sensível ao modo como os indivíduos organizam seu tempo livre.
+O lazer constitui uma dimensão central da vida universitária, associada à construção de sentido, pertencimento e bem-estar. Nesse contexto, a saúde mental positiva, entendida como a presença de bem-estar emocional, psicológico e social (Keyes), e não apenas a ausência de transtornos, tem se mostrado sensível ao modo como os indivíduos organizam seu tempo livre.
 
-Este estudo tem como objetivo analisar as associações entre práticas de lazer e a percepção de saúde mental positiva de jovens universitários da Universidade Federal de Minas Gerais (UFMG, Brasil) e da Pontifícia Universidade Javeriana (Colômbia), buscando identificar em que medida diferentes formas de lazer se relacionam com os níveis de florescimento psicológico dos estudantes.
+Este estudo tem como objetivo analisar as associações entre práticas de lazer e a percepção de saúde mental positiva de jovens universitários da Universidade Federal de Minas Gerais (Brasil) e da Pontifícia Universidade Javeriana (Colômbia), buscando identificar em que medida diferentes formas de lazer se relacionam com os níveis de florescimento psicológico dos estudantes.
 
 ```{r carregar pacotes}
 library(tidyverse)
@@ -53,7 +60,94 @@ library(rstatix)
 library(ordinal)
 library(VGAM)
 library(gtsummary)
+library(broom)
 
+```
+
+```{r funcoes-tabelas}
+# ---- Padrão de tabelas do relatório ----
+# Tema do gtsummary (tabelas dos modelos): português, vírgula decimal
+theme_gtsummary_language("pt", decimal.mark = ",", big.mark = ".")
+
+# Formatação de números no padrão brasileiro
+fmt_br <- function(x, d = 2) {
+  formatC(x, format = "f", digits = d, decimal.mark = ",", big.mark = ".")
+}
+fmt_pval <- function(p) ifelse(p < 0.001, "<0,001", fmt_br(p, 3))
+fmt_p <- function(p) if (p < 0.001) "p < 0,001" else paste0("p = ", fmt_br(p, 3))
+
+# Tabela padrão: booktabs, legenda numerada, fonte 9, nota no rodapé
+tabela_padrao <- function(dados,
+                          titulo,
+                          nomes_colunas = names(dados),
+                          nota = NULL,
+                          longa = FALSE,
+                          col_p = NULL,
+                          p_valores = NULL,
+                          alinhamento = c("l", rep("c", ncol(dados) - 1))) {
+  tab <- kbl(
+    dados,
+    format = "latex",
+    booktabs = TRUE,
+    longtable = longa,
+    linesep = "",
+    caption = titulo,
+    col.names = nomes_colunas,
+    align = alinhamento
+  ) %>%
+    kable_styling(
+      latex_options = if (longa) "repeat_header" else "HOLD_position",
+      repeat_header_text = "\\textit{(continuação)}",
+      font_size = 9
+    )
+
+  # p-valores menores que 0,05 em negrito (mesmo padrão das tabelas dos modelos)
+  if (!is.null(col_p)) {
+    tab <- column_spec(tab, col_p, bold = !is.na(p_valores) & p_valores < 0.05)
+  }
+
+  if (!is.null(nota)) {
+    tab <- footnote(
+      tab,
+      general = nota,
+      general_title = "Nota:",
+      threeparttable = TRUE,
+      footnote_as_chunk = TRUE
+    )
+  }
+  tab
+}
+
+# Tabela de frequências com linha de total
+tabela_frequencia <- function(dados, var, rotulo, titulo, na_rotulo = NULL) {
+  tab <- dados %>%
+    count(categoria = .data[[var]]) %>%
+    mutate(
+      categoria = as.character(categoria),
+      freq_relativa = n / sum(n) * 100
+    )
+
+  if (!is.null(na_rotulo)) {
+    tab <- tab %>% mutate(categoria = coalesce(categoria, na_rotulo))
+  }
+
+  tab <- bind_rows(
+    tab,
+    tibble(categoria = "Total", n = sum(tab$n), freq_relativa = 100)
+  ) %>%
+    mutate(
+      n = fmt_br(n, 0),
+      freq_relativa = fmt_br(freq_relativa, 2)
+    )
+
+  tabela_padrao(
+    tab,
+    titulo,
+    nomes_colunas = c(rotulo, "Frequência", "Frequência relativa (%)")
+  ) %>%
+    row_spec(nrow(tab) - 1, extra_latex_after = "\\midrule") %>%
+    row_spec(nrow(tab), bold = TRUE)
+}
 ```
 
 ```{r carregar dados}
@@ -105,25 +199,12 @@ df_acessos_ufmg <- df %>%
 A amostra é composta por 227 participantes, sendo 55,07% da UFMG (Brasil) e 44,93% da Javeriana (Colômbia).
 
 ```{r instituicao de origem}
-df %>%
-  count(contexto_institucional) %>%
-  mutate(freq_relativa = n / sum(n) * 100) %>%
-  rename(frequencia = n) %>%
-  gt() %>%
-  fmt_number(columns = freq_relativa, decimals = 2) %>%
-  cols_label(
-    contexto_institucional = "Contexto institucional",
-    frequencia = "Frequência",
-    freq_relativa = "Frequência relativa (%)"
-  ) %>%
-  grand_summary_rows(
-    columns = c(frequencia, freq_relativa),
-    fns = list(Total = ~ sum(.))
-  ) %>%
-  tab_header(
-    title = "Tabela Instituição de origem",
-    subtitle = "Universidade - País"
-  )
+tabela_frequencia(
+  df,
+  "contexto_institucional",
+  "Contexto institucional",
+  "Distribuição dos participantes por instituição de origem (Universidade - País)"
+)
 ```
 
 ## Idade
@@ -139,18 +220,14 @@ df %>%
     Maximo = max(idade, na.rm = TRUE),
     N = n()
   ) %>%
-  gt() %>%
-  fmt_number(columns = c(Media, DP, Minimo, Maximo), decimals = 2) %>%
-  cols_label(
-    Media = "Média",
-    DP = "Desvio padrão",
-    Minimo = "Mínimo",
-    Maximo = "Máximo",
-    N = "N"
+  mutate(
+    across(c(Media, DP, Minimo, Maximo), ~ fmt_br(.x, 2)),
+    N = fmt_br(N, 0)
   ) %>%
-  tab_header(
-    title = "Distribuição Idade",
-    subtitle = "Medidas descritivas"
+  tabela_padrao(
+    "Medidas descritivas da idade dos participantes (anos)",
+    nomes_colunas = c("Média", "Desvio padrão", "Mínimo", "Máximo", "N"),
+    alinhamento = rep("c", 5)
   )
 ```
 
@@ -159,27 +236,13 @@ df %>%
 A amostra é majoritariamente composta por mulheres cisgênero (48,90%) e homens cisgênero (44,93%), com uma pequena proporção reportando diversidade de identidades (4,41%) ou preferindo não responder (1,76%).
 
 ```{r genero respondente}
-df %>%
-  count(genero_modelo) %>%
-  mutate(
-    genero_modelo = coalesce(genero_modelo, "Prefiro não responder"),
-    freq_relativa = n / sum(n) * 100
-  ) %>%
-  rename(frequencia = n) %>%
-  gt() %>%
-  fmt_number(columns = freq_relativa, decimals = 2) %>%
-  cols_label(
-    genero_modelo = "Genêro",
-    frequencia = "Frequência",
-    freq_relativa = "Frequência relativa (%)"
-  ) %>%
-  grand_summary_rows(
-    columns = c(frequencia, freq_relativa),
-    fns = list(Total = ~ sum(.))
-  ) %>%
-  tab_header(
-    title = "Distribuição de Genêro"
-  )
+tabela_frequencia(
+  df,
+  "genero_modelo",
+  "Gênero",
+  "Distribuição dos participantes por gênero",
+  na_rotulo = "Prefiro não responder"
+)
 ```
 
 ## Estado Civil
@@ -187,26 +250,15 @@ df %>%
 A grande maioria dos participantes é solteira (92,95%), com uma minoria em união estável (6,17%).
 
 ```{r estado civil}
-df %>%
-  count(estado_civil_detalhado) %>%
-  mutate(freq_relativa = n / sum(n) * 100) %>%
-  rename(frequencia = n) %>%
-  gt() %>%
-  fmt_number(columns = freq_relativa, decimals = 2) %>%
-  cols_label(
-    estado_civil_detalhado = "Estado Civil",
-    frequencia = "Frequência",
-    freq_relativa = "Frequência relativa (%)"
-  ) %>%
-  grand_summary_rows(
-    columns = c(frequencia, freq_relativa),
-    fns = list(Total = ~ sum(.))
-  ) %>%
-  tab_header(
-    title = "Distribuição Estado Civil"
-  )
+tabela_frequencia(
+  df,
+  "estado_civil_detalhado",
+  "Estado civil",
+  "Distribuição dos participantes por estado civil"
+)
 ```
 
+\newpage
 ## Etnia/Cor
 
 Como os sistemas de classificação étnica diferem entre os dois países, essa variável foi analisada separadamente: na Colômbia predomina a ausência de filiação étnica declarada, enquanto no Brasil predomina a autodeclaração como branca, seguida de parda e preta.
@@ -252,24 +304,12 @@ plot_etnia_cor_colombia + plot_etnia_cor_brasil
 Quase todos os participantes estão em nível de graduação (96,48%), com pequenas parcelas em mestrado (3,08%) e especialização (0,44%).
 
 ```{r nivel academico}
-df %>%
-  count(nivel_academico_detalhado) %>%
-  mutate(freq_relativa = n / sum(n) * 100) %>%
-  rename(frequencia = n) %>%
-  gt() %>%
-  fmt_number(columns = freq_relativa, decimals = 2) %>%
-  cols_label(
-    nivel_academico_detalhado = "Nivel academico",
-    frequencia = "Frequência",
-    freq_relativa = "Frequência relativa (%)"
-  ) %>%
-  grand_summary_rows(
-    columns = c(frequencia, freq_relativa),
-    fns = list(Total = ~ sum(.))
-  ) %>%
-  tab_header(
-    title = "Distribuição Nivel Academico"
-  )
+tabela_frequencia(
+  df,
+  "nivel_academico_detalhado",
+  "Nível acadêmico",
+  "Distribuição dos participantes por nível acadêmico"
+)
 ```
 
 ## Deficiencia
@@ -277,25 +317,12 @@ df %>%
 A maior parte da amostra (96,04%) não se declara pessoa com deficiência.
 
 ```{r deficiencia}
-df %>%
-  count(deficiencia_detalhada) %>%
-  mutate(freq_relativa = n / sum(n) * 100) %>%
-  rename(frequencia = n) %>%
-  gt() %>%
-  fmt_number(columns = freq_relativa, decimals = 2) %>%
-  cols_label(
-    deficiencia_detalhada = "Deficiente",
-    frequencia = "Frequência",
-    freq_relativa = "Frequência relativa (%)"
-  ) %>%
-  grand_summary_rows(
-    columns = c(frequencia, freq_relativa),
-    fns = list(Total = ~ sum(.))
-  ) %>%
-  tab_header(
-    title = "Distribuição Deficiencia"
-  )
-
+tabela_frequencia(
+  df,
+  "deficiencia_detalhada",
+  "Pessoa com deficiência",
+  "Distribuição dos participantes por condição de deficiência"
+)
 ```
 # Metodologia Estatística
 
@@ -329,6 +356,7 @@ ggplot(df, aes(x = fct_inorder(moradia_modelo))) +
   )
 ```
 
+\newpage
 ## Trabalho
 
 A amostra está dividida de forma quase equilibrada entre estudantes que trabalham e os que não trabalham. Entre os que exercem atividade remunerada, a maior concentração está entre 20 e 40 horas semanais.
@@ -497,44 +525,20 @@ resultado <- map_dfr(
 )
 
 resultado %>%
-  gt() %>%
-  tab_header(
-    title = "Teste de Mann–Whitney",
-    subtitle = "Comparação entre instituições"
+  mutate(
+    mediana_g1 = fmt_br(mediana_g1, 1),
+    mediana_g2 = fmt_br(mediana_g2, 1),
+    W = fmt_br(W, 1),
+    p_valor_txt = fmt_pval(p_valor)
   ) %>%
-  fmt_number(
-    columns = c(mediana_g1, mediana_g2),
-    decimals = 0
-  ) %>%
-  fmt_number(
-    columns = p_valor,
-    decimals = 4
-  ) %>%
-  cols_label(
-    variavel = "Variável",
-    mediana_g1 = "Med G1",
-    mediana_g2 = "Med G2",
-    W = "W",
-    p_valor = "p-valor"
-  ) %>%
-  tab_style(
-    style = list(
-      cell_fill(color = "#FDE2E2"),
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = p_valor,
-      rows = p_valor >= 0.05
-    )
-  ) %>%
-  cols_align(
-    align = "center",
-    columns = everything()
-  ) %>%
-  tab_source_note(
-    source_note = md(
-      "Med G1 e Med G2 são as medianas da Javeriana e UFMG respectivamente"
-    )
+  select(variavel, mediana_g1, mediana_g2, W, p_valor_txt) %>%
+  tabela_padrao(
+    "Teste de Mann-Whitney: comparação entre instituições",
+    nomes_colunas = c("Variável", "Mediana G1", "Mediana G2", "W", "p-valor"),
+    nota = "Mediana G1 e Mediana G2 são as medianas da Javeriana e da UFMG, respectivamente. p-valores menores que 0,05 em negrito.",
+    longa = TRUE,
+    col_p = 5,
+    p_valores = resultado$p_valor
   )
 ```
 
@@ -625,17 +629,18 @@ resultado_shapiro <- bind_rows(
 )
 
 resultado_shapiro %>%
-  gt() %>%
-  fmt_number(
-    columns = c(
-      W,
-      p_valor
-    ),
-    decimals = 5
+  mutate(
+    n = fmt_br(n, 0),
+    W = fmt_br(W, 4),
+    p_valor_txt = fmt_pval(p_valor)
   ) %>%
-  tab_header(
-    title = "Teste de Shapiro-Wilk",
-    subtitle = "Teste para normalidade"
+  select(grupo_resultado, n, W, p_valor_txt) %>%
+  tabela_padrao(
+    "Teste de Shapiro-Wilk para normalidade das horas semanais na universidade",
+    nomes_colunas = c("Grupo", "n", "W", "p-valor"),
+    nota = "Hipótese nula: os dados seguem distribuição normal. p-valores menores que 0,05 em negrito.",
+    col_p = 4,
+    p_valores = resultado_shapiro$p_valor
   )
 ```
 
@@ -669,29 +674,19 @@ resultado <- tibble(
 )
 
 resultado %>%
-  gt() %>%
-  tab_header(
-    title = "Teste de Mann–Whitney",
-    subtitle = "Comparação de horas de estudo semanal entre as instituições"
+  mutate(
+    `Mediana G1` = fmt_br(`Mediana G1`, 1),
+    `Mediana G2` = fmt_br(`Mediana G2`, 1),
+    W = fmt_br(W, 1),
+    p_txt = fmt_pval(`p-valor`)
   ) %>%
-  fmt_number(
-    columns = c(`Mediana G1`, `Mediana G2`),
-    decimals = 1
-  ) %>%
-  fmt_number(
-    columns = W,
-    decimals = 1
-  ) %>%
-  fmt_number(
-    columns = `p-valor`,
-    decimals = 4
-  ) %>%
-  cols_align(
-    align = "center",
-    columns = everything()
-  ) %>%
-  tab_source_note(
-    source_note = "Teste de Wilcoxon rank-sum com correção de continuidade."
+  select(Variável, `Grupo 1`, `Mediana G1`, `Grupo 2`, `Mediana G2`, W, p_txt) %>%
+  tabela_padrao(
+    "Teste de Mann-Whitney: horas semanais na universidade entre as instituições",
+    nomes_colunas = c("Variável", "Grupo 1", "Mediana G1", "Grupo 2", "Mediana G2", "W", "p-valor"),
+    nota = "Teste de Wilcoxon rank-sum com correção de continuidade. p-valores menores que 0,05 em negrito.",
+    col_p = 7,
+    p_valores = resultado$`p-valor`
   )
 
 ```
@@ -714,22 +709,26 @@ ggplot(
   )
 ) +
   geom_bar() +
-  theme_classic() + 
+  theme_classic() +
   labs(
-    title = "Distribuição de horas na Universidade",
-    x = "classificação",
-    subtitle = "Horas/semana"
+    title = "Distribuição da classificação MHC",
+    x = "Classificação",
+    y = "Frequência",
+    subtitle = "Critérios de Keyes"
   )
 ```
+
 # Modelagem
 
-```{r}
+```{r preparo-modelos}
+# ---- Variável resposta ordenada ----
 df$mhc_classificacao <- factor(
   df$mhc_classificacao,
   levels = c("Languishing", "Moderate", "Flourishing"),
   ordered = TRUE
 )
 
+# ---- Práticas de lazer incluídas nos modelos ----
 vars_rec_modelo <- c(
   "rec_caminhar", "rec_casal", "rec_contemplar", "rec_treinamento",
   "rec_competicoes", "rec_comer_social", "rec_redes_sociais",
@@ -737,14 +736,16 @@ vars_rec_modelo <- c(
   "rec_assistir_treinos", "rec_danca"
 )
 
+# Modelo 1: cada valor da escala (1 a 10) é uma categoria
 df <- df %>%
   mutate(
     across(
       starts_with("rec"),
-      ~ factor(.x, levels = as.character(1:10), ordered = FALSE)
+      ~ factor(.x, levels = as.character(1:10), ordered = F)
     )
   )
 
+# Modelo 2: escala agrupada em cinco faixas
 df2 <- df %>%
   mutate(
     across(
@@ -763,6 +764,7 @@ df2 <- df %>%
     )
   )
 
+# Modelo 3: escala tratada como número (1 a 10)
 df3 <- df %>%
   mutate(
     across(
@@ -771,7 +773,7 @@ df3 <- df %>%
     )
   )
 
-#Ajuste dos três modelos
+# ---- Ajuste dos três modelos ----
 modelo_ordinal <- clm(
   mhc_classificacao ~
     idade + genero_modelo + trabalho_sim + horas_universidade_semana +
@@ -801,18 +803,17 @@ modelo_ordinal3 <- clm(
     rec_assistir_treinos + rec_danca,
   data = df3
 )
-
 ```
 
 ```{r funcoes-auxiliares}
-theme_gtsummary_language("pt", decimal.mark = ",", big.mark = ".")
-
+# Mantém só os coeficientes das variáveis (remove os limiares/interceptos)
 tidy_clm <- function(x, ..., conf.type = "profile") {
   broom::tidy(x, ..., conf.type = conf.type) %>%
     dplyr::filter(coef.type == "location") %>%
     dplyr::select(-coef.type)
 }
 
+# Tabela padronizada, com quebra de página (longtable) para o PDF
 tabela_modelo <- function(modelo, titulo, conf_type = "profile") {
   tbl_regression(
     modelo,
@@ -832,10 +833,7 @@ tabela_modelo <- function(modelo, titulo, conf_type = "profile") {
     )
 }
 
-fmt_br <- function(x, d = 2) formatC(x, format = "f", digits = d, decimal.mark = ",", big.mark = ".")
-fmt_p <- function(p) if (p < 0.001) "p < 0,001" else paste0("p = ", fmt_br(p, 3))
-
-
+# OR, IC 95% e p-valor de um termo específico (usado no texto)
 or_info <- function(m, termo) {
   ic <- tryCatch(
     exp(suppressMessages(confint(m, parm = termo))),
@@ -853,16 +851,16 @@ or_txt <- function(m, termo) {
   paste0("OR = ", fmt_br(i$or), "; IC 95%: ", fmt_br(i$lo), " a ", fmt_br(i$hi), "; ", fmt_p(i$p))
 }
 
+# Diagnóstico de estimação
 diag_info <- function(m) {
   tibble(
     parametros = length(coef(m)),
     n = m$nobs,
-    aic = AIC(m),
-    grad = max(abs(m$gradient)),
-    condH = m$cond.H
+    aic = AIC(m)
   )
 }
 
+# Contagem de "células" atividade x nível x classificação
 contar_celulas <- function(dados) {
   map_dfr(vars_rec_modelo, function(v) {
     dados %>%
@@ -879,6 +877,7 @@ n_modelo   <- modelo_ordinal3$nobs
 n_lang     <- sum(df$mhc_classificacao == "Languishing", na.rm = TRUE)
 n_excluidos <- nrow(df) - n_modelo
 
+# Modelo 1
 beta1        <- modelo_ordinal$beta
 n_beta1      <- length(beta1)
 or1          <- exp(beta1)
@@ -907,6 +906,8 @@ contemplar   <- or_info(modelo_ordinal3, "rec_contemplar")
 
 Esta seção investiga quais práticas de lazer estão associadas à classificação de saúde mental positiva (MHC) dos estudantes. Como a resposta tem três níveis com uma ordem natural — *Languishing* (definhando) < *Moderate* (moderado) < *Flourishing* (florescendo) —, foi utilizado um **modelo de regressão logística ordinal** (modelo de chances proporcionais), ajustado com a função `clm` do pacote `ordinal`.
 
+O modelo inicial inclui idade, gênero, se o estudante trabalha e horas semanais na universidade, além de 12 práticas de lazer, cada uma medida numa escala de frequência de 1 a 10.
+
 O modelo originalmente planejado (Modelo 1) apresentou sérios problemas de estimação. Por isso, são apresentadas duas alternativas (Modelos 2 e 3), que diferem apenas na forma como as práticas de lazer entram no modelo. As demais variáveis são idênticas nos três.
 
 ## Como ler os resultados
@@ -922,58 +923,72 @@ Os resultados são apresentados como **razão de chances** (OR, do inglês *odds
 
 Dois cuidados importantes. Primeiro, "chance" não é o mesmo que probabilidade: a chance é a probabilidade de algo acontecer dividida pela probabilidade de não acontecer (uma probabilidade de 75% corresponde a uma chance de 3 para 1). Na prática, basta ler o OR como "aumenta" ou "diminui" a chance. Segundo, o modelo supõe que o efeito de cada característica é o mesmo para "sair de *Languishing* para *Moderate*" e para "sair de *Moderate* para *Flourishing*" — daí o nome "chances proporcionais".
 
-Por fim, os resultados mostram **associações**, não relações de causa e efeito. Um OR menor que 1 para uma atividade não significa que ela prejudica a saúde mental; pode ser, por exemplo, que estudantes em pior situação procurem mais essa atividade.
+Por fim, resultados não mostram relações de causa e efeito. Um OR menor que 1 para uma atividade não significa que ela prejudica a saúde mental.
 
 ## As três formas de incluir as práticas de lazer
 
 A diferença entre os modelos está em como a escala de 1 a 10 de cada prática de lazer é tratada:
 
-| | Modelo 1 (original) | Modelo 2 (faixas) | Modelo 3 (numérico) |
-|:--|:--|:--|:--|
-| Como a atividade entra | 10 categorias separadas (1, 2, ..., 10) | 5 faixas (1-2, 3-4, 5-6, 7-8, 9-10) | Um número de 1 a 10 |
-| O que cada OR compara | Cada nível contra o nível 1 | Cada faixa contra a faixa 1-2 | O efeito de subir 1 ponto na escala |
-| Valores estimados por atividade | 9 | 4 | 1 |
-| Total de efeitos estimados | `r n_beta1` | `r n_beta2` | `r n_beta3` |
+```{r tabela-tres-modelos}
+tibble(
+  aspecto = c(
+    "Como a atividade entra",
+    "O que cada OR compara",
+    "Valores estimados por atividade",
+    "Total de efeitos estimados"
+  ),
+  m1 = c("10 categorias separadas (1, 2, ..., 10)", "Cada nível contra o nível 1", "9", as.character(n_beta1)),
+  m2 = c("5 faixas (1-2, 3-4, 5-6, 7-8, 9-10)", "Cada faixa contra a faixa 1-2", "4", as.character(n_beta2)),
+  m3 = c("Um número de 1 a 10", "O efeito de subir 1 ponto na escala", "1", as.character(n_beta3))
+) %>%
+  tabela_padrao(
+    "Diferenças na forma de incluir as práticas de lazer nos três modelos",
+    nomes_colunas = c("", "Modelo 1 (original)", "Modelo 2 (faixas)", "Modelo 3 (numérico)")
+  ) %>%
+  column_spec(1, bold = TRUE, width = "3.2cm") %>%
+  column_spec(2:4, width = "3.8cm")
+```
 
-Em termos simples: quanto mais valores o modelo precisa estimar, mais informação (pessoas) ele exige para cada um deles. Com `r n_modelo` estudantes — e apenas `r n_lang` na categoria *Languishing* — essa diferença é decisiva.
+Em termos simples: quanto mais valores o modelo precisa estimar, mais informação (pessoas) ele exige para cada um deles.
 
 ## Modelo 1 (original): cada nível da escala como uma categoria
 
-**O que foi estimado.** Neste modelo, cada ponto da escala é tratado como um grupo diferente, sem assumir nenhuma ordem entre eles. Para "Dança", por exemplo, o modelo compara separadamente quem marcou 2, quem marcou 3, ..., quem marcou 10 com quem marcou 1. A vantagem é a flexibilidade: nenhum formato de relação é imposto. A desvantagem é o número de valores a estimar: `r n_beta1` efeitos para `r n_modelo` pessoas.
+**O que foi estimado.** Neste modelo, consideramos a escala inicial. A desvantagem é o número de valores a estimar: `r n_beta1` efeitos para `r n_modelo` pessoas, ou seja, menos de `r ceiling(n_modelo / n_beta1)` pessoas por efeito estimado.
 
-**Por que o modelo apresentou problemas.** O modelo é estimado por *máxima verossimilhança*: o algoritmo procura os valores de OR que melhor reproduzem o que foi observado nos dados. Quando uma combinação tem pouquíssimas pessoas — ou nenhuma —, o "melhor" valor possível é infinitamente grande ou igual a zero, e o algoritmo não consegue chegar a uma resposta estável. A tabela abaixo ilustra o problema com a atividade "Dança":
+**Por que o modelo apresentou problemas.** O modelo é estimado por *máxima verossimilhança*: o algoritmo procura os valores de OR que melhor reproduzem o que foi observado nos dados. Quando uma combinação tem pouquíssimas pessoas ou nenhuma, o "melhor" valor possível é infinitamente grande ou igual a zero, e o algoritmo não consegue chegar a uma resposta estável. A tabela abaixo ilustra o problema com a atividade "Dança":
 
 ```{r tabela-danca}
-df %>%
+tab_danca <- df %>%
   filter(!is.na(mhc_classificacao), !is.na(rec_danca)) %>%
   count(mhc_classificacao, rec_danca, .drop = FALSE) %>%
   pivot_wider(names_from = rec_danca, values_from = n) %>%
-  gt() %>%
-  cols_label(mhc_classificacao = "Classificação MHC") %>%
-  tab_spanner(
-    label = "Frequência de dança (escala de 1 a 10)",
-    columns = -mhc_classificacao
+  mutate(mhc_classificacao = as.character(mhc_classificacao))
+
+tab_danca %>%
+  tabela_padrao(
+    "Número de estudantes por classificação MHC e frequência de dança",
+    nomes_colunas = c("Classificação MHC", names(tab_danca)[-1])
   ) %>%
-  cols_align(align = "center", columns = -mhc_classificacao) %>%
-  tab_header(
-    title = "Número de estudantes por classificação MHC e frequência de dança"
+  add_header_above(
+    setNames(c(1, ncol(tab_danca) - 1), c(" ", "Frequência de dança (escala de 1 a 10)"))
   ) %>%
-  tab_source_note(
-    source_note = "Várias combinações têm zero ou pouquíssimos estudantes, o que impede a estimação estável no Modelo 1."
+  footnote(
+    general = "A categoria 9 tem 0 observações para duas das três categorias da variavel responta, isso impede a estimação estável no Modelo 1.",
+    general_title = "Nota:",
+    threeparttable = TRUE,
+    footnote_as_chunk = TRUE
   )
 ```
 
-Entre os estudantes *Languishing*, quase todos marcaram 1 para dança; para os demais níveis há zero ou um estudante. Não há, portanto, informação suficiente para estimar um OR para cada nível. Os sintomas disso aparecem na tabela completa do Modelo 1 (Apêndice): **`r n_extremos1` razões de chances absurdas** (acima de 100 ou abaixo de 0,01, como um OR de centenas de milhares para gênero) e intervalos de confiança que não puderam ser calculados ou que vão de quase zero a valores enormes.
+Os sintomas disso aparecem na tabela completa do Modelo 1 (Apêndice): Apresenta OR absurdas e intervalos de confiança que não puderam ser calculados ou que vão de quase zero a valores enormes.
 
 **Como interpretar.** Em teoria, cada OR do Modelo 1 seria lido como "estudantes que marcaram o nível X têm chances tantas vezes maiores (ou menores) de estar num nível mais alto de saúde mental do que os que marcaram 1". Na prática, **os resultados deste modelo não devem ser interpretados**: os números refletem a falta de dados em várias combinações, e não uma relação real. Por transparência, a tabela completa está no Apêndice.
 
 ## Modelo 2: escala agrupada em cinco faixas
 
-**O que muda na estimação.** Os níveis vizinhos da escala foram agrupados em pares (1-2, 3-4, 5-6, 7-8, 9-10). Cada atividade passa a exigir 4 efeitos em vez de 9, e o total cai para `r n_beta2`. Com os grupos maiores, a proporção de combinações sem nenhum estudante cai de `r fmt_br(pct_vazias1, 0)`% para `r fmt_br(pct_vazias2, 0)`%, e o modelo converge. O modelo continua sem impor um formato à relação: a faixa 7-8 pode, por exemplo, ter efeito maior do que a faixa 9-10.
+**O que muda na estimação.** Os níveis vizinhos da escala foram agrupados em pares (1-2, 3-4, 5-6, 7-8, 9-10). Cada atividade passa a exigir 4 efeitos em vez de 9, e o total cai para `r n_beta2`. Com os grupos maiores, o numero de combinações sem nenhum estudante cai e o modelo converge. O modelo continua sem impor um formato à relação: a faixa 7-8 pode, por exemplo, ter efeito maior do que a faixa 9-10.
 
-**Como interpretar.** Cada OR compara uma faixa com a faixa de referência (1-2, a de menor frequência). Exemplo: para "Atividades em casal", a faixa 3-4 apresentou `r or_txt(modelo_ordinal2, "rec_casal3-4")`. Lê-se: estudantes na faixa 3-4 dessa atividade têm chances cerca de `r fmt_br((1 - or_info(modelo_ordinal2, "rec_casal3-4")$or) * 100, 0)`% menores de estar num nível mais alto de saúde mental do que os da faixa 1-2, considerando as demais características iguais.
-
-Esse resultado, porém, deve ser lido com cautela. As outras faixas de "Atividades em casal" não seguem o mesmo sentido, e o modelo faz `r n_comp2` comparações envolvendo lazer. Com tantas comparações, é esperado que cerca de `r fmt_br(n_comp2 * 0.05, 0)` apareçam como significativas **apenas por acaso** (5% delas); foram observadas `r n_sig2`. Resultados isolados, sem um padrão coerente entre as faixas, são pouco convincentes.
+**Como interpretar.** Cada OR compara uma faixa com a faixa de referência (1-2). Exemplo: para "Atividades em casal", a faixa 3-4 apresentou `r or_txt(modelo_ordinal2, "rec_casal3-4")`. Lê-se: estudantes na faixa 3-4 dessa atividade têm chances cerca de `r fmt_br((1 - or_info(modelo_ordinal2, "rec_casal3-4")$or) * 100, 0)`% menores de estar num nível mais alto de saúde mental do que os da faixa 1-2, considerando as demais características iguais.
 
 ```{r tabela-modelo2}
 tabela_modelo(
@@ -984,7 +999,7 @@ tabela_modelo(
 
 ## Modelo 3: escala tratada como numérica
 
-**O que muda na estimação.** Aqui a escala de 1 a 10 é usada como um número, e cada atividade tem **um único efeito**: o que acontece com a chance de melhor saúde mental a cada ponto a mais na escala. O total cai para `r n_beta3` efeitos (cerca de `r floor(n_modelo / n_beta3)` pessoas por efeito), o que torna a estimação estável e os intervalos de confiança mais estreitos.
+**O que muda na estimação.** Aqui a escala de 1 a 10 é usada como um número, e cada atividade tem **um único efeito**: o que acontece com a chance de melhor saúde mental a cada ponto a mais na escala. O total cai para `r n_beta3` efeitos, o que torna a estimação estável e os intervalos de confiança mais estreitos.
 
 O custo é uma suposição adicional: o modelo assume que **cada ponto a mais tem o mesmo efeito**, seja passar de 1 para 2, seja de 9 para 10. Se a relação real for diferente (por exemplo, só frequências muito altas importarem), esse modelo pode não captá-la. O Modelo 2 funciona como uma verificação desse ponto.
 
@@ -993,7 +1008,6 @@ O custo é uma suposição adicional: o modelo assume que **cada ponto a mais te
 - **Jogos eletrônicos** (`r or_txt(modelo_ordinal3, "rec_jogos_eletronicos")`): cada ponto a mais na frequência de jogos eletrônicos está associado a chances cerca de `r fmt_br((1 - jogos$or) * 100, 0)`% menores de estar num nível mais alto de saúde mental. Os efeitos se acumulam por multiplicação: um estudante que marcou 7 comparado a um que marcou 2 (5 pontos de diferença) tem OR de `r fmt_br(jogos$or, 2)` elevado a 5 = `r fmt_br(jogos$or^5, 2)`, ou seja, chances cerca de `r fmt_br((1 - jogos$or^5) * 100, 0)`% menores.
 - **Filmes** (`r or_txt(modelo_ordinal3, "rec_filmes")`): há uma indicação de associação positiva (cerca de `r fmt_br((filmes$or - 1) * 100, 0)`% a mais nas chances por ponto), mas o resultado está no limite da significância e deve ser tratado como um indício, não como uma conclusão.
 - **Contemplar** (`r or_txt(modelo_ordinal3, "rec_contemplar")`): tendência positiva, sem significância estatística.
-- As demais práticas de lazer e as variáveis de controle não mostraram associação estatisticamente significativa.
 
 ```{r tabela-modelo3}
 tabela_modelo(
@@ -1004,7 +1018,7 @@ tabela_modelo(
 
 ## Comparação entre os modelos e recomendação
 
-A tabela a seguir resume a qualidade da estimação dos três modelos. O **número de condição** indica se o algoritmo encontrou uma solução bem definida: valores acima de 10.000 (1e+04) sinalizam que as estimativas não são confiáveis. O **AIC** compara o ajuste dos modelos penalizando a quantidade de efeitos estimados — quanto menor, melhor o equilíbrio entre ajuste e simplicidade. O AIC do Modelo 1 deve ser visto com reserva, justamente pela instabilidade da estimação.
+A tabela a seguir resume a qualidade da estimação dos três modelos. O **AIC** compara o ajuste dos modelos penalizando a quantidade de efeitos estimados, quanto menor, melhor o equilíbrio entre ajuste e simplicidade. O AIC do Modelo 1 deve ser visto com base de comparação, justamente pela instabilidade da estimação.
 
 ```{r tabela-diagnostico}
 bind_rows(
@@ -1012,31 +1026,16 @@ bind_rows(
   diag_info(modelo_ordinal2) %>% mutate(modelo = "2 - Faixas (5 níveis)"),
   diag_info(modelo_ordinal3) %>% mutate(modelo = "3 - Escala numérica")
 ) %>%
+  select(modelo, parametros, n, aic) %>%
   mutate(
-    diagnostico = if_else(
-      is.na(condH) | condH > 1e4 | grad > 1e-4,
-      "Instável", "Estável"
-    )
+    aic = fmt_br(aic, 1)
   ) %>%
-  select(modelo, parametros, n, aic, grad, condH, diagnostico) %>%
-  gt() %>%
-  fmt_number(columns = aic, decimals = 1, dec_mark = ",", sep_mark = ".") %>%
-  fmt_scientific(columns = c(grad, condH), decimals = 1) %>%
-  cols_label(
-    modelo = "Modelo",
-    parametros = "Parâmetros estimados",
-    n = "N",
-    aic = "AIC",
-    grad = "Gradiente máximo",
-    condH = "Número de condição",
-    diagnostico = "Estimação"
-  ) %>%
-  cols_align(align = "center", columns = -modelo) %>%
-  tab_header(
-    title = "Diagnóstico de estimação dos três modelos"
-  ) %>%
-  tab_source_note(
-    source_note = "Parâmetros estimados incluem os 2 limiares (interceptos) do modelo ordinal. Gradiente máximo próximo de zero e número de condição abaixo de 1e+04 indicam estimação estável."
+  tabela_padrao(
+    "Diagnóstico de estimação dos três modelos",
+    nomes_colunas = c(
+      "Modelo", "Parâmetros estimados", "N", "AIC"
+    ),
+    nota = "Parâmetros estimados incluem os 2 limiares (interceptos) do modelo ordinal"
   )
 ```
 
@@ -1054,7 +1053,7 @@ Vale registrar uma limitação: as duas instituições diferem bastante tanto na
 
 # Apêndice: tabela completa do Modelo 1 {.unnumbered}
 
-A tabela abaixo documenta os resultados do Modelo 1 (original). Como descrito na seção de Modelagem, **esses valores não devem ser interpretados**: as razões de chances extremas e os intervalos muito amplos são consequência da falta de dados em muitas combinações, e não de associações reais. Os intervalos de confiança foram calculados pelo método de Wald, pois o método padrão (verossimilhança perfilada) não converge para este modelo.
+A tabela abaixo documenta os resultados do Modelo 1 (original). Como descrito na seção de Modelagem, **esses valores não devem ser interpretados**: as razões de chances extremas e não é possivel calcular intervalos pois o algoritmo não converge para este modelo.
 
 ```{r tabela-modelo1}
 tabela_modelo(
@@ -1063,5 +1062,3 @@ tabela_modelo(
   conf_type = "Wald"
 )
 ```
-
-
