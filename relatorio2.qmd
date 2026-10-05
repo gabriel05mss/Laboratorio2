@@ -61,7 +61,6 @@ library(ordinal)
 library(VGAM)
 library(gtsummary)
 library(broom)
-
 ```
 
 ```{r funcoes-tabelas}
