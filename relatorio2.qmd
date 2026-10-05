@@ -741,7 +741,18 @@ df <- df %>%
     across(
       starts_with("rec"),
       ~ factor(.x, levels = as.character(1:10), ordered = F)
-    )
+    ),
+    horas_universidade_semana = case_when(
+      horas_universidade_semana <= 20 ~ "Até 20h",
+      horas_universidade_semana > 20 & horas_universidade_semana <= 40 ~ "20 - 40h",
+      TRUE ~ "+40h"
+    ),
+    etnia_cor_detalhada = recode(
+      etnia_cor_detalhada,
+      "Negro(a)" = "Preta"
+    ),
+    etnia_cor_detalhada = factor(etnia_cor_detalhada),
+    etnia_cor_detalhada = relevel(etnia_cor_detalhada, ref = "Preta")
   )
 
 # Modelo 2: escala agrupada em cinco faixas
@@ -771,35 +782,95 @@ df3 <- df %>%
       ~ as.numeric(as.character(.x))
     )
   )
-
+    
 # ---- Ajuste dos três modelos ----
 modelo_ordinal <- clm(
   mhc_classificacao ~
-    idade + genero_modelo + trabalho_sim + horas_universidade_semana +
-    rec_caminhar + rec_casal + rec_contemplar + rec_treinamento +
-    rec_competicoes + rec_comer_social + rec_redes_sociais +
-    rec_jogos_eletronicos + rec_filmes + rec_academia +
-    rec_assistir_treinos + rec_danca,
+    idade +
+    genero_modelo +
+    trabalho_sim +
+    horas_universidade_semana +
+    rec_caminhar +
+    rec_casal +
+    rec_contemplar +
+    rec_treinamento +
+    rec_competicoes +
+    rec_comer_social +
+    rec_redes_sociais +
+    rec_jogos_eletronicos +
+    rec_filmes +
+    rec_academia +
+    rec_assistir_treinos +
+    rec_danca +
+    rec_amigos +
+    rec_desenhar +
+    rec_musica +
+    rec_jogos_mesa +
+    rec_religioso +
+    instituicao_origem +
+    moradia_modelo +
+    etnia_cor_detalhada +
+    anos_no_curso,
   data = df
 )
 
 modelo_ordinal2 <- clm(
   mhc_classificacao ~
-    idade + genero_modelo + trabalho_sim + horas_universidade_semana +
-    rec_caminhar + rec_casal + rec_contemplar + rec_treinamento +
-    rec_competicoes + rec_comer_social + rec_redes_sociais +
-    rec_jogos_eletronicos + rec_filmes + rec_academia +
-    rec_assistir_treinos + rec_danca,
+    idade +
+    genero_modelo +
+    trabalho_sim +
+    horas_universidade_semana +
+    rec_caminhar +
+    rec_casal +
+    rec_contemplar +
+    rec_treinamento +
+    rec_competicoes +
+    rec_comer_social +
+    rec_redes_sociais +
+    rec_jogos_eletronicos +
+    rec_filmes +
+    rec_academia +
+    rec_assistir_treinos +
+    rec_danca +
+    rec_amigos +
+    rec_desenhar +
+    rec_musica +
+    rec_jogos_mesa +
+    rec_religioso +
+    instituicao_origem +
+    moradia_modelo +
+    etnia_cor_detalhada +
+    anos_no_curso,
   data = df2
 )
 
 modelo_ordinal3 <- clm(
   mhc_classificacao ~
-    idade + genero_modelo + trabalho_sim + horas_universidade_semana +
-    rec_caminhar + rec_casal + rec_contemplar + rec_treinamento +
-    rec_competicoes + rec_comer_social + rec_redes_sociais +
-    rec_jogos_eletronicos + rec_filmes + rec_academia +
-    rec_assistir_treinos + rec_danca,
+    idade +
+    genero_modelo +
+    trabalho_sim +
+    horas_universidade_semana +
+    rec_caminhar +
+    rec_casal +
+    rec_contemplar +
+    rec_treinamento +
+    rec_competicoes +
+    rec_comer_social +
+    rec_redes_sociais +
+    rec_jogos_eletronicos +
+    rec_filmes +
+    rec_academia +
+    rec_assistir_treinos +
+    rec_danca +
+    rec_amigos +
+    rec_desenhar +
+    rec_musica +
+    rec_jogos_mesa +
+    rec_religioso +
+    instituicao_origem +
+    moradia_modelo +
+    etnia_cor_detalhada +
+    anos_no_curso,
   data = df3
 )
 ```
@@ -979,10 +1050,6 @@ tab_danca %>%
   )
 ```
 
-Os sintomas disso aparecem na tabela completa do Modelo 1 (Apêndice): Apresenta OR absurdas e intervalos de confiança que não puderam ser calculados ou que vão de quase zero a valores enormes.
-
-**Como interpretar.** Em teoria, cada OR do Modelo 1 seria lido como "estudantes que marcaram o nível X têm chances tantas vezes maiores (ou menores) de estar num nível mais alto de saúde mental do que os que marcaram 1". Na prática, **os resultados deste modelo não devem ser interpretados**: os números refletem a falta de dados em várias combinações, e não uma relação real. Por transparência, a tabela completa está no Apêndice.
-
 ## Modelo 2: escala agrupada em cinco faixas
 
 **O que muda na estimação.** Os níveis vizinhos da escala foram agrupados em pares (1-2, 3-4, 5-6, 7-8, 9-10). Cada atividade passa a exigir 4 efeitos em vez de 9, e o total cai para `r n_beta2`. Com os grupos maiores, o numero de combinações sem nenhum estudante cai e o modelo converge. O modelo continua sem impor um formato à relação: a faixa 7-8 pode, por exemplo, ter efeito maior do que a faixa 9-10.
@@ -1050,14 +1117,10 @@ Vale registrar uma limitação: as duas instituições diferem bastante tanto na
 
 \newpage
 
-# Apêndice: tabela completa do Modelo 1 {.unnumbered}
-
-A tabela abaixo documenta os resultados do Modelo 1 (original). Como descrito na seção de Modelagem, **esses valores não devem ser interpretados**: as razões de chances extremas e não é possivel calcular intervalos pois o algoritmo não converge para este modelo.
-
 ```{r tabela-modelo1}
-tabela_modelo(
-  modelo_ordinal,
-  "Modelo 1 (original) — Regressão ordinal com cada nível da escala de lazer como categoria (referência: nível 1)",
-  conf_type = "Wald"
-)
+# tabela_modelo(
+#   modelo_ordinal,
+#   "Modelo 1 (original) — Regressão ordinal com cada nível da escala de lazer como categoria (referência: nível 1)",
+#   conf_type = "Wald"
+# )
 ```
