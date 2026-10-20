@@ -1,32 +1,37 @@
 library(kableExtra)
 library(webshot2)
 
-tab <- resultado %>%
+tab <- bind_rows(
+  diag_info(modelo_ordinal)  %>% mutate(modelo = "1 - Original (10 níveis)"),
+  diag_info(modelo_ordinal2) %>% mutate(modelo = "2 - Faixas (5 níveis)"),
+  diag_info(modelo_ordinal3) %>% mutate(modelo = "3 - Escala numérica")
+) %>%
+  select(modelo, parametros, n, aic) %>%
   mutate(
-    `Mediana G1` = fmt_br(`Mediana G1`, 1),
-    `Mediana G2` = fmt_br(`Mediana G2`, 1),
-    W = fmt_br(W, 1),
-    p_txt = fmt_pval(`p-valor`)
+    aic = fmt_br(aic, 1)
   ) %>%
-  select(Variável, `Grupo 1`, `Mediana G1`, `Grupo 2`, `Mediana G2`, W, p_txt) %>%
   tabela_padrao(
-    "Teste de Mann-Whitney: horas semanais na universidade entre as instituições",
-    nomes_colunas = c("Variável", "Grupo 1", "Mediana G1", "Grupo 2", "Mediana G2", "W", "p-valor"),
-    nota = "Teste de Wilcoxon rank-sum com correção de continuidade. p-valores menores que 0,05 em negrito.",
-    col_p = 7,
-    p_valores = resultado$`p-valor`
+    "Diagnóstico de estimação dos três modelos",
+    nomes_colunas = c(
+      "Modelo", "Parâmetros estimados", "N", "AIC"
+    ),
+    nota = "Parâmetros estimados incluem os 2 limiares (interceptos) do modelo ordinal"
   )
+
 
 kableExtra::save_kable(
   tab,
-  "tabela_wilcoxon.png"
-)
+  "diag_model.png")
 
 library(magick)
 
-image_read("tabela_wilcoxon.png") |>
+
+image_read("diag_model.png") |>
   image_background("white", flatten = TRUE) |>
-  image_write("tabela_wilcoxon.png")
-              
+  image_write("diag_model.png")
 # magick::image_read_pdf("tabela_genero.pdf", density = 300) |>
 #   magick::image_write("tabela_genero.png")
+
+
+
+

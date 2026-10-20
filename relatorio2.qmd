@@ -807,7 +807,6 @@ modelo_ordinal <- clm(
     rec_musica +
     rec_jogos_mesa +
     rec_religioso +
-    instituicao_origem +
     moradia_modelo +
     etnia_cor_detalhada +
     anos_no_curso,
@@ -837,7 +836,6 @@ modelo_ordinal2 <- clm(
     rec_musica +
     rec_jogos_mesa +
     rec_religioso +
-    instituicao_origem +
     moradia_modelo +
     etnia_cor_detalhada +
     anos_no_curso,
@@ -867,7 +865,6 @@ modelo_ordinal3 <- clm(
     rec_musica +
     rec_jogos_mesa +
     rec_religioso +
-    instituicao_origem +
     moradia_modelo +
     etnia_cor_detalhada +
     anos_no_curso,
@@ -1047,6 +1044,20 @@ tab_danca %>%
     general_title = "Nota:",
     threeparttable = TRUE,
     footnote_as_chunk = TRUE
+  )
+```
+
+```{r}
+tab_uni <- df %>%
+  filter(!is.na(mhc_classificacao), !is.na(contexto_institucional)) %>%
+  count(mhc_classificacao, contexto_institucional, .drop = FALSE) %>%
+  pivot_wider(names_from = contexto_institucional, values_from = n) %>%
+  mutate(mhc_classificacao = as.character(mhc_classificacao))
+
+tab_uni %>%
+  tabela_padrao(
+    "Número de estudantes por classificação MHC e Universidade",
+    nomes_colunas = c("Classificação MHC", names(tab_uni)[-1])
   )
 ```
 
