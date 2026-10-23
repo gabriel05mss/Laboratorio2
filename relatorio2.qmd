@@ -61,6 +61,8 @@ library(ordinal)
 library(VGAM)
 library(gtsummary)
 library(broom)
+library(car)
+library(psych)
 ```
 
 ```{r funcoes-tabelas}
@@ -747,7 +749,7 @@ df <- df %>%
       horas_universidade_semana > 20 & horas_universidade_semana <= 40 ~ "20 - 40h",
       TRUE ~ "+40h"
     ),
-    etnia_cor_detalhada = recode(
+    etnia_cor_detalhada = dplyr::recode(
       etnia_cor_detalhada,
       "Negro(a)" = "Preta"
     ),
@@ -1126,12 +1128,86 @@ A recomendação é adotar o **Modelo 3 como análise principal** e apresentar o
 
 Vale registrar uma limitação: as duas instituições diferem bastante tanto nas práticas de lazer quanto nos indicadores de saúde mental (Seção 4.3), e a instituição não está incluída nos modelos. Parte das associações observadas pode, portanto, refletir diferenças entre os contextos institucionais, e não o lazer em si.
 
-\newpage
+# Análise Fatorial
+```{r}
+df_rec <- df %>%
+  select(
+    rec_caminhar,
+    rec_casal,
+    rec_contemplar,
+    rec_treinamento,
+    rec_competicoes,
+    rec_comer_social,
+    rec_redes_sociais,
+    rec_jogos_eletronicos,
+    rec_filmes,
+    rec_academia,
+    rec_assistir_treinos,
+    rec_danca,
+    rec_amigos,
+    rec_desenhar,
+    rec_musica,
+    rec_jogos_mesa,
+    rec_religioso)
 
-```{r tabela-modelo1}
-# tabela_modelo(
-#   modelo_ordinal,
-#   "Modelo 1 (original) — Regressão ordinal com cada nível da escala de lazer como categoria (referência: nível 1)",
-#   conf_type = "Wald"
-# )
+dados <- as.data.frame(lapply(df_rec, ordered))
+
+#Matriz de correlações
+dados2 <- as.data.frame(lapply(df_rec, as.numeric))
+
+R_spear <- cor(
+  dados2,
+  method = "spearman",
+  use = "pairwise.complete.obs"
+)
+
+#número de fatores
+psych::fa.parallel(
+  R_spear,
+  fa = "fa",
+  cor = "cor",
+  fm = "minres",
+  n.iter = 500
+)
+
+sum(eigen(R_spear)$values > 1)
+
+modelo_oblimin_4f <- psych::fa(
+  r = R_spear,
+  nfactors = 4,
+  n.obs = nrow(dados2),
+  fm = "minres",
+  rotate = "oblimin"
+)
+print(modelo_oblimin_4f$loadings)
+
+modelo_oblimin_5f <- psych::fa(
+  r = R_spear,
+  nfactors = 5,
+  n.obs = nrow(dados2),
+  fm = "minres",
+  rotate = "oblimin"
+)
+print(modelo_oblimin_5f$loadings)
+
+modelo_promax_4f <- psych::fa(
+  r = R_spear,
+  nfactors = 4,
+  n.obs = nrow(dados2),
+  fm = "minres",
+  rotate = "promax"
+)
+print(modelo_promax_4f$loadings)
+
+modelo_promax_5f <- psych::fa(
+  r = R_spear,
+  nfactors = 5,
+  n.obs = nrow(dados2),
+  fm = "minres",
+  rotate = "promax"
+)
+print(modelo_promax_5f$loadings)
+
 ```
+
+

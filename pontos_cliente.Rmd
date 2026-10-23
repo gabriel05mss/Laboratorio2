@@ -1,0 +1,172 @@
+---
+title: "pontos_cliente"
+author: "Gabriel Moreira"
+date: "2026-10-22"
+output: html_document
+---
+
+```{r carregar-relatorio-original, message=FALSE, warning=FALSE}
+arquivo_temp <- tempfile(fileext = ".R")
+
+knitr::purl(
+  "relatorio2.qmd",
+  output = arquivo_temp,
+  documentation = 0
+)
+
+sys.source(
+  arquivo_temp,
+  envir = knitr::knit_global()
+)
+
+unlink(arquivo_temp)
+rm(arquivo_temp)
+```
+
+```{r}
+
+gvif_clm <- function(modelo) {
+  # Matriz de desenho dos preditores
+  mf <- model.frame(modelo)
+  tt <- delete.response(terms(modelo))
+  X <- model.matrix(tt, data = mf)
+
+  # Excluir intercepto, se houver
+  ass <- attr(X, "assign")
+  keep <- ass != 0
+  X <- X[, keep, drop = FALSE]
+  ass <- ass[keep]
+
+  # Correlação entre as colunas da matriz de desenho
+  R <- cor(X)
+
+  termos <- attr(tt, "term.labels")
+  resultado <- matrix(
+    NA_real_, nrow = length(termos), ncol = 3,
+    dimnames = list(
+      termos,
+      c("GVIF", "Df", "GVIF^(1/(2*Df))")
+    )
+  )
+
+  detR <- det(R)
+
+  for (j in seq_along(termos)) {
+    idx <- which(ass == j)
+    outros <- setdiff(seq_len(ncol(R)), idx)
+
+    resultado[j, "Df"] <- length(idx)
+
+    resultado[j, "GVIF"] <-
+      det(R[idx, idx, drop = FALSE]) *
+      det(R[outros, outros, drop = FALSE]) / detR
+
+    resultado[j, "GVIF^(1/(2*Df))"] <-
+      resultado[j, "GVIF"]^(1 / (2 * length(idx)))
+  }
+
+  resultado
+}
+```
+
+1. Instituição fora dos modelos. Na Tabela 12, 63,7% dos estudantes da Javeriana estão em Flourishing, contra 23,2% da UFMG, e a Tabela 7 mostra diferenças entre as instituições em quase todos os itens. Queria entender se os resultados das práticas de lazer mudam quando a instituição entra no modelo. Também fiquei preocupada porque o Modelo 3 estima 30 coeficientes (um para cada característica incluída) e temos só 13 estudantes em Languishing. Queria entender se isso é suficiente para estimar tudo com segurança.
+
+```{r}
+modelo_ordinal2_uni <- clm(
+  mhc_classificacao ~
+    idade +
+    genero_modelo +
+    trabalho_sim +
+    horas_universidade_semana +
+    rec_caminhar +
+    rec_casal +
+    rec_contemplar +
+    rec_treinamento +
+    rec_competicoes +
+    rec_comer_social +
+    rec_redes_sociais +
+    rec_jogos_eletronicos +
+    rec_filmes +
+    rec_academia +
+    rec_assistir_treinos +
+    rec_danca +
+    rec_amigos +
+    rec_desenhar +
+    rec_musica +
+    rec_jogos_mesa +
+    rec_religioso +
+    moradia_modelo +
+    etnia_cor_detalhada +
+    anos_no_curso +
+    contexto_institucional,
+  data = df2
+)
+
+modelo_ordinal3_uni <- clm(
+  mhc_classificacao ~
+    idade +
+    genero_modelo +
+    trabalho_sim +
+    horas_universidade_semana +
+    rec_caminhar +
+    rec_casal +
+    rec_contemplar +
+    rec_treinamento +
+    rec_competicoes +
+    rec_comer_social +
+    rec_redes_sociais +
+    rec_jogos_eletronicos +
+    rec_filmes +
+    rec_academia +
+    rec_assistir_treinos +
+    rec_danca +
+    rec_amigos +
+    rec_desenhar +
+    rec_musica +
+    rec_jogos_mesa +
+    rec_religioso +
+    moradia_modelo +
+    etnia_cor_detalhada +
+    anos_no_curso +
+    contexto_institucional,
+  data = df3
+)
+
+tabela_modelo(modelo_ordinal2_uni, "modelo2 - com universidade")
+tabela_modelo(modelo_ordinal3_uni, "modelo3 - com universidade")
+cat("modelo3 com uni")
+gvif_clm(modelo_ordinal3_uni)
+cat("modelo3 sem uni")
+gvif_clm(modelo_ordinal3)
+cat("modelo2 com uni")
+gvif_clm(modelo_ordinal2_uni)
+cat("modelo2 sem uni")
+gvif_clm(modelo_ordinal2)
+
+```
+
+2. Verificações dos modelos. A Tabela 15 mostra só o número de parâmetros, o N e o AIC. Percebi que o AIC do Modelo 1 (336,0) é igual a 2 × 168, o que me fez pensar que esse modelo se ajustou perfeitamente aos dados por causa de separação. Gostaria de ver as demais verificações: convergência, gradiente, condição da Hessiana, GVIF, BIC e o teste de chances proporcionais.
+
+
+```{r}
+tabela_modelo(
+  modelo_ordinal,
+  "Modelo 1 (original) — Regressão ordinal com cada nível da escala de lazer como categoria (referência: nível 1)",
+  conf_type = "Wald"
+)
+
+ordinal::nominal_test(modelo_ordinal2)
+ordinal::nominal_test(modelo_ordinal3)
+t(table(df2$rec_treinamento, df2$mhc_classificacao))
+t(table(df2$rec_competicoes, df2$mhc_classificacao))
+t(table(df2$rec_filmes, df2$mhc_classificacao))
+t(table(df2$rec_amigos, df2$mhc_classificacao))
+t(table(df2$etnia_cor_detalhada, df2$mhc_classificacao))
+```
+
+
+3. Tabela 7 (Mann-Whitney). Alguns itens aparecem como significativos mesmo com medianas iguais (por exemplo, sm_interesse: 5 e 5), e foram feitos 34 testes sem ajuste. Queria ver o tamanho do efeito (W / n1 × n2) e os p-valores ajustados (Holm e Benjamini-Hochberg), para saber quais diferenças realmente se sustentam.
+
+4. Shapiro-Wilk (Tabela 8). Vi que o teste foi aplicado também à amostra total, e queria entender se isso faz sentido para comparar as instituições. Gostaria de ver o teste por grupo, com gráficos Q-Q.
+
+5. Intervalos de confiança do texto. Na seção 5.4, o texto traz para rec_casal (faixa 3-4) um intervalo de 0,66 a 1,11, mas a Tabela 13 mostra 0,02 a 1,01. Na seção 5.5, o texto traz 0,79 a 0,99 para jogos eletrônicos, filmes e contemplar, e a Tabela 14 mostra 0,77 a 0,96, 1,01 a 1,24 e 0,98 a 1,28. Você consegue me ajudar a ligar os números do texto às tabelas por código, para os dois sempre coincidirem?

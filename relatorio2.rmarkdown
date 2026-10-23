@@ -1,0 +1,1139 @@
+---
+title: "Analise estatística das práticas de lazer com a percepção de saúde mental positiva dos jovens universitários da Universidade Federal de Minas Gerais e Universidade Pontifícia Javeriana de Bogotá"
+author: "Gabriel Moreira"
+date: today
+lang: pt
+format:
+  pdf:
+    toc: true
+    toc-depth: 2
+    number-sections: true
+    documentclass: scrartcl
+    classoption:
+      - DIV=11
+      - numbers=noendperiod
+      - titlepage
+header-includes:
+  - \usepackage{float}
+  - \floatplacement{table}{H}
+  - \floatplacement{figure}{H}
+  - \usepackage{booktabs}
+  - \usepackage{longtable}
+  - \usepackage{array}
+  - \usepackage{multirow}
+  - \usepackage{threeparttable}
+  - \usepackage{threeparttablex}
+  - \usepackage{makecell}
+---
+
+\newpage
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE,
+  fig.width = 10,
+  fig.height = 6,
+  fig.align = "center"
+)
+```
+
+# Introdução
+
+O lazer constitui uma dimensão central da vida universitária, associada à construção de sentido, pertencimento e bem-estar. Nesse contexto, a saúde mental positiva, entendida como a presença de bem-estar emocional, psicológico e social (Keyes), e não apenas a ausência de transtornos, tem se mostrado sensível ao modo como os indivíduos organizam seu tempo livre.
+
+Este estudo tem como objetivo analisar as associações entre práticas de lazer e a percepção de saúde mental positiva de jovens universitários da Universidade Federal de Minas Gerais (Brasil) e da Pontifícia Universidade Javeriana (Colômbia), buscando identificar em que medida diferentes formas de lazer se relacionam com os níveis de florescimento psicológico dos estudantes.
+
+```{r carregar pacotes}
+library(tidyverse)
+library(ggplot2)
+library(patchwork)
+library(kableExtra)
+library(gt)
+library(dplyr)
+library(purrr)
+library(stringr)
+library(knitr)
+library(rstatix)
+library(ordinal)
+library(VGAM)
+library(gtsummary)
+library(broom)
+library(car)
+```
+
+```{r funcoes-tabelas}
+# ---- Padrão de tabelas do relatório ----
+# Tema do gtsummary (tabelas dos modelos): português, vírgula decimal
+theme_gtsummary_language("pt", decimal.mark = ",", big.mark = ".")
+
+# Formatação de números no padrão brasileiro
+fmt_br <- function(x, d = 2) {
+  formatC(x, format = "f", digits = d, decimal.mark = ",", big.mark = ".")
+}
+fmt_pval <- function(p) ifelse(p < 0.001, "<0,001", fmt_br(p, 3))
+fmt_p <- function(p) if (p < 0.001) "p < 0,001" else paste0("p = ", fmt_br(p, 3))
+
+# Tabela padrão: booktabs, legenda numerada, fonte 9, nota no rodapé
+tabela_padrao <- function(dados,
+                          titulo,
+                          nomes_colunas = names(dados),
+                          nota = NULL,
+                          longa = FALSE,
+                          col_p = NULL,
+                          p_valores = NULL,
+                          alinhamento = c("l", rep("c", ncol(dados) - 1))) {
+  tab <- kbl(
+    dados,
+    format = "latex",
+    booktabs = TRUE,
+    longtable = longa,
+    linesep = "",
+    caption = titulo,
+    col.names = nomes_colunas,
+    align = alinhamento
+  ) %>%
+    kable_styling(
+      latex_options = if (longa) "repeat_header" else "HOLD_position",
+      repeat_header_text = "\\textit{(continuação)}",
+      font_size = 9
+    )
+
+  # p-valores menores que 0,05 em negrito (mesmo padrão das tabelas dos modelos)
+  if (!is.null(col_p)) {
+    tab <- column_spec(tab, col_p, bold = !is.na(p_valores) & p_valores < 0.05)
+  }
+
+  if (!is.null(nota)) {
+    tab <- footnote(
+      tab,
+      general = nota,
+      general_title = "Nota:",
+      threeparttable = TRUE,
+      footnote_as_chunk = TRUE
+    )
+  }
+  tab
+}
+
+# Tabela de frequências com linha de total
+tabela_frequencia <- function(dados, var, rotulo, titulo, na_rotulo = NULL) {
+  tab <- dados %>%
+    count(categoria = .data[[var]]) %>%
+    mutate(
+      categoria = as.character(categoria),
+      freq_relativa = n / sum(n) * 100
+    )
+
+  if (!is.null(na_rotulo)) {
+    tab <- tab %>% mutate(categoria = coalesce(categoria, na_rotulo))
+  }
+
+  tab <- bind_rows(
+    tab,
+    tibble(categoria = "Total", n = sum(tab$n), freq_relativa = 100)
+  ) %>%
+    mutate(
+      n = fmt_br(n, 0),
+      freq_relativa = fmt_br(freq_relativa, 2)
+    )
+
+  tabela_padrao(
+    tab,
+    titulo,
+    nomes_colunas = c(rotulo, "Frequência", "Frequência relativa (%)")
+  ) %>%
+    row_spec(nrow(tab) - 1, extra_latex_after = "\\midrule") %>%
+    row_spec(nrow(tab), bold = TRUE)
+}
+```
+
+```{r carregar dados}
+df <- readRDS("data/base_unificada.rds")
+
+#filtros bases etnia/cor
+etnia_cor_colombia <- df %>%
+  filter(sistema_etnia_cor == "Pertencimento étnico – Colômbia")
+  
+etnia_cor_brasil <- df %>%
+  filter(sistema_etnia_cor == "Cor/raça – Brasil")
+
+df_trabalho <- df %>%
+  filter(trabalho_detalhado == "Sim")
+
+
+df_acessos_javeriana <- df %>%
+  filter(instituicao_origem == "Javeriana") %>%
+  select(
+    instituicao_origem,
+    starts_with("acesso_puj")
+  ) %>%
+  rename_with(
+    ~ str_replace(.x, "^acesso_puj", "acesso"),
+    starts_with("acesso_puj")
+  )
+
+df_acessos_ufmg <- df %>%
+  filter(instituicao_origem != "Javeriana") %>%
+  select(
+    instituicao_origem,
+    starts_with("acesso_ufmg")
+  ) %>%
+  rename_with(
+    ~ str_replace(.x, "^acesso_ufmg", "acesso"),
+    starts_with("acesso_ufmg")
+  ) %>%
+  rename(
+    "acesso_cinema" = "acesso_cinemas",
+    "acesso_teatro" = "acesso_teatros"
+  )
+
+```
+
+# Caracterização da amostra
+
+## Contexto Institucional
+
+A amostra é composta por 227 participantes, sendo 55,07% da UFMG (Brasil) e 44,93% da Javeriana (Colômbia).
+
+```{r instituicao de origem}
+tabela_frequencia(
+  df,
+  "contexto_institucional",
+  "Contexto institucional",
+  "Distribuição dos participantes por instituição de origem (Universidade - País)"
+)
+```
+
+## Idade
+
+A idade média dos participantes foi de 21,71 anos (DP = 2,70), variando entre 18 e 29 anos.
+
+```{r idade}
+df %>%
+  summarise(
+    Media = mean(idade, na.rm = TRUE),
+    DP = sd(idade, na.rm = TRUE),
+    Minimo = min(idade, na.rm = TRUE),
+    Maximo = max(idade, na.rm = TRUE),
+    N = n()
+  ) %>%
+  mutate(
+    across(c(Media, DP, Minimo, Maximo), ~ fmt_br(.x, 2)),
+    N = fmt_br(N, 0)
+  ) %>%
+  tabela_padrao(
+    "Medidas descritivas da idade dos participantes (anos)",
+    nomes_colunas = c("Média", "Desvio padrão", "Mínimo", "Máximo", "N"),
+    alinhamento = rep("c", 5)
+  )
+```
+
+## Genêro
+
+A amostra é majoritariamente composta por mulheres cisgênero (48,90%) e homens cisgênero (44,93%), com uma pequena proporção reportando diversidade de identidades (4,41%) ou preferindo não responder (1,76%).
+
+```{r genero respondente}
+tabela_frequencia(
+  df,
+  "genero_modelo",
+  "Gênero",
+  "Distribuição dos participantes por gênero",
+  na_rotulo = "Prefiro não responder"
+)
+```
+
+## Estado Civil
+
+A grande maioria dos participantes é solteira (92,95%), com uma minoria em união estável (6,17%).
+
+```{r estado civil}
+tabela_frequencia(
+  df,
+  "estado_civil_detalhado",
+  "Estado civil",
+  "Distribuição dos participantes por estado civil"
+)
+```
+
+\newpage
+## Etnia/Cor
+
+Como os sistemas de classificação étnica diferem entre os dois países, essa variável foi analisada separadamente: na Colômbia predomina a ausência de filiação étnica declarada, enquanto no Brasil predomina a autodeclaração como branca, seguida de parda e preta.
+
+```{r etinia cor}
+plot_etnia_cor_colombia<- ggplot(etnia_cor_colombia, aes(x = fct_inorder(etnia_cor_detalhada), y = after_stat(count / sum(count) * 100))) +
+  geom_bar(show.legend = FALSE) +
+  labs(
+    title = "Distribuição de Etnia/cor",
+    x = "Etnia/Cor",
+    y = "Porcentagem (%)",
+    subtitle = "Pertencimento étnico – Colômbia"
+  ) +
+  scale_y_continuous(labels = scales::label_percent(scale = 1)) +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(angle = 0, hjust = 1),
+    plot.title = element_text(size = 14, face = "bold"),
+    plot.subtitle = element_text(size = 11, color = "gray50")
+  )
+
+plot_etnia_cor_brasil<- ggplot(etnia_cor_brasil, aes(x = fct_inorder(etnia_cor_detalhada), y = after_stat(count / sum(count) * 100))) +
+  geom_bar(show.legend = FALSE) +
+  labs(
+    title = "Distribuição de Etnia/cor",
+    x = "Etnia/Cor",
+    y = "Porcentagem (%)",
+    subtitle = "Cor/raça – Brasil"
+  ) +
+  scale_y_continuous(labels = scales::label_percent(scale = 1)) +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(angle = 0, hjust = 1),
+    plot.title = element_text(size = 14, face = "bold"),
+    plot.subtitle = element_text(size = 11, color = "gray50")
+  )
+
+plot_etnia_cor_colombia + plot_etnia_cor_brasil
+```
+
+## Nivel Academico
+
+Quase todos os participantes estão em nível de graduação (96,48%), com pequenas parcelas em mestrado (3,08%) e especialização (0,44%).
+
+```{r nivel academico}
+tabela_frequencia(
+  df,
+  "nivel_academico_detalhado",
+  "Nível acadêmico",
+  "Distribuição dos participantes por nível acadêmico"
+)
+```
+
+## Deficiencia
+
+A maior parte da amostra (96,04%) não se declara pessoa com deficiência.
+
+```{r deficiencia}
+tabela_frequencia(
+  df,
+  "deficiencia_detalhada",
+  "Pessoa com deficiência",
+  "Distribuição dos participantes por condição de deficiência"
+)
+```
+# Metodologia Estatística
+
+A escolha dos procedimentos estatísticos adotados neste estudo foi realizada de acordo com os objetivos de cada análise e as características das variáveis investigadas. Dessa forma, diferentes técnicas foram empregadas para garantir que as inferências produzidas fossem adequadas aos dados analisados.
+
+Quando pertinente, a distribuição dos dados foi avaliada por meio do teste de Shapiro-Wilk, amplamente utilizado para verificar a hipótese de normalidade. Nesse teste, a hipótese nula estabelece que os dados são provenientes de uma população com distribuição normal. Por exemplo, ao analisar uma variável quantitativa, como horas semanais dedicadas às atividades acadêmicas, o teste pode ser utilizado para verificar se a distribuição observada apresenta características compatíveis com a normalidade. Essa avaliação auxilia na definição dos métodos estatísticos mais apropriados para as análises subsequentes.
+
+Nas comparações entre grupos independentes, quando os pressupostos necessários para a utilização de métodos paramétricos não eram atendidos, foi empregado o teste de Mann-Whitney. Trata-se de um teste não paramétrico que compara a posição relativa das observações por meio de suas ordenações (ranks), sem exigir que os dados sigam uma distribuição normal. Como exemplo, esse procedimento pode ser utilizado para comparar a distribuição das horas semanais dedicadas à universidade entre estudantes de diferentes instituições de ensino, permitindo verificar se um dos grupos tende a apresentar valores mais elevados do que o outro.
+
+A utilização desses procedimentos possibilita a realização de análises estatísticas compatíveis com as características dos dados observados, contribuindo para a robustez e a confiabilidade das conclusões obtidas. Assim, a seleção de cada teste foi conduzida considerando os objetivos específicos de cada análise e os pressupostos requeridos por cada método.
+
+# Análises
+
+## Tipo de Moradia
+
+A maioria dos participantes reside com familiares ou parceiro(a) (81,5%), enquanto uma minoria vive sozinha (6,6%) ou em moradia compartilhada/coletiva (11,9%).
+```{r moradia}
+ggplot(df, aes(x = fct_inorder(moradia_modelo))) +
+  geom_bar(show.legend = FALSE) +
+  labs(
+    title = "Distribuição do modelo de moradia",
+    x = "modelo de moradia",
+    y = "Frequência",
+    subtitle = "Contagem modelo de moradia"
+  ) +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(angle = 0, hjust = 1),
+    plot.title = element_text(size = 14, face = "bold"),
+    plot.subtitle = element_text(size = 11, color = "gray50")
+  )
+```
+
+\newpage
+## Trabalho
+
+A amostra está dividida de forma quase equilibrada entre estudantes que trabalham e os que não trabalham. Entre os que exercem atividade remunerada, a maior concentração está entre 20 e 40 horas semanais.
+```{r trabalho}
+trabalho <- ggplot(df, aes(x = fct_inorder(trabalho_detalhado))) +
+  geom_bar(show.legend = FALSE) +
+  labs(
+    title = "Distribuição do estudantes que trabalham",
+    x = "Trabalho",
+    y = "Frequência",
+    subtitle = "Contagem trabalhadores entre os respondentes"
+  ) +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(angle = 0, hjust = 1),
+    plot.title = element_text(size = 14, face = "bold"),
+    plot.subtitle = element_text(size = 11, color = "gray50")
+  )
+
+horas_trabalho <- ggplot(df_trabalho, aes(x = horas_trabalho_semana)) +
+  geom_histogram(bins = 10) +
+  labs(
+    title = "Distribuição horas trabalhadas",
+    x = "Tempo em horas",
+    subtitle = "Horas/Semana"
+  ) +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(angle = 0, hjust = 1),
+    plot.title = element_text(size = 14, face = "bold"),
+    plot.subtitle = element_text(size = 11, color = "gray50")
+  )
+
+trabalho + horas_trabalho
+```
+
+## Testes de hipoteses
+
+Para comparar as duas instituições quanto às práticas de lazer e aos indicadores de saúde mental positiva, foi aplicado o teste de Mann–Whitney. Os resultados indicam que os estudantes da Javeriana reportam, de forma consistente, medianas mais altas em quase todos os itens de saúde mental positiva e em boa parte das práticas de lazer, com diferenças estatisticamente significativas (p < 0,05). Não foram observadas diferenças significativas entre as instituições para rec_redes_sociais, rec_jogos_eletronicos, rec_filmes e rec_fumar (p > 0,10), sugerindo que essas práticas têm frequência semelhante independentemente do contexto institucional.
+```{r teste}
+#| fig-width: 12
+#| fig-height: 20
+grupo <- "instituicao_origem"
+
+vars <- names(
+  df %>% 
+    select(
+      starts_with("sm"),
+      starts_with("rec"),
+      -rec_dormir_puj,
+      -rec_ler_ufmg,
+      -rec_aulas_puj,
+      -rec_festas_ufmg
+    )
+)
+
+df_long <- df %>%
+  pivot_longer(
+    cols = all_of(vars),
+    names_to = "variavel",
+    values_to = "valor"
+  )
+
+df_prop <- df_long %>%
+  count(variavel, instituicao_origem, valor) %>%
+  group_by(variavel, instituicao_origem) %>%
+  mutate(prop = n / sum(n)) %>%
+  ungroup()
+
+df_prop_sm <- df_prop %>%
+  filter(str_starts(variavel, "sm"))
+
+df_prop_rec <- df_prop %>%
+  filter(str_starts(variavel, "rec"))
+
+ggplot(
+  df_prop_sm,
+  aes(
+    x = factor(valor),
+    y = prop,
+    fill = instituicao_origem
+  )
+) +
+  geom_col(position = "dodge") +
+  facet_wrap(
+    ~ variavel,
+    scales = "free_x",
+    ncol = 2
+  ) +
+  scale_y_continuous(labels = scales::percent_format()) +
+  theme_minimal() +
+  labs(
+    title = "Atividades Significativas (SM)",
+    x = NULL,
+    y = "Proporção",
+    fill = "Instituição"
+  )
+
+```
+
+```{r}
+#| fig-width: 12
+#| fig-height: 20
+ggplot(
+  df_prop_rec,
+  aes(
+    x = factor(valor),
+    y = prop,
+    fill = instituicao_origem
+  )
+) +
+  geom_col(position = "dodge") +
+  facet_wrap(
+    ~ variavel,
+    scales = "free_x",
+    ncol = 2
+  ) +
+  scale_y_continuous(labels = scales::percent_format()) +
+  theme_minimal() +
+  labs(
+    title = "Recursos de Lazer (REC)",
+    x = NULL,
+    y = "Proporção",
+    fill = "Instituição"
+  )
+```
+
+
+```{r}
+resultado <- map_dfr(
+  vars,
+  function(var) {
+
+    dados <- df %>%
+      select(all_of(grupo), all_of(var)) %>%
+      filter(
+        !is.na(.data[[grupo]]),
+        !is.na(.data[[var]])
+      )
+
+    grupos <- unique(dados[[grupo]])
+
+    if (length(grupos) != 2) {
+      return(NULL)
+    }
+
+    teste <- wilcox.test(
+      dados[[var]] ~ dados[[grupo]],
+      exact = FALSE
+    )
+
+    tibble(
+      variavel = var,
+      mediana_g1 = median(
+        dados[[var]][dados[[grupo]] == grupos[1]],
+        na.rm = TRUE
+      ),
+      mediana_g2 = median(
+        dados[[var]][dados[[grupo]] == grupos[2]],
+        na.rm = TRUE
+      ),
+      W = unname(teste$statistic),
+      p_valor = teste$p.value
+    )
+  }
+)
+
+resultado %>%
+  mutate(
+    mediana_g1 = fmt_br(mediana_g1, 1),
+    mediana_g2 = fmt_br(mediana_g2, 1),
+    W = fmt_br(W, 1),
+    p_valor_txt = fmt_pval(p_valor)
+  ) %>%
+  select(variavel, mediana_g1, mediana_g2, W, p_valor_txt) %>%
+  tabela_padrao(
+    "Teste de Mann-Whitney: comparação entre instituições",
+    nomes_colunas = c("Variável", "Mediana G1", "Mediana G2", "W", "p-valor"),
+    nota = "Mediana G1 e Mediana G2 são as medianas da Javeriana e da UFMG, respectivamente. p-valores menores que 0,05 em negrito.",
+    longa = TRUE,
+    col_p = 5,
+    p_valores = resultado$p_valor
+  )
+```
+
+## Horas universidade
+
+A distribuição das horas semanais de permanência na universidade mostra que os estudantes da Javeriana tendem a passar mais tempo na instituição do que os da UFMG, com maior dispersão e uma mediana mais alta, como evidenciado pelos gráficos de densidade e de caixa.
+```{r}
+hist_horas <- ggplot(
+  df,
+  aes(
+    x = horas_universidade_semana,
+    fill = .data[[grupo]],
+    color = .data[[grupo]]
+  )
+) +
+  geom_density(
+    alpha = 0.25,
+    linewidth = 1
+  ) +
+  geom_rug(
+    alpha = 0.15
+  ) +
+  theme_classic() +
+  labs(
+    title = "Distribuição de horas na Universidade",
+    x = "Horas",
+    subtitle = "Horas/semana"
+  )
+
+bx_horas <- ggplot(
+  df,
+  aes(
+    y = horas_universidade_semana,
+    x = instituicao_origem,
+    fill = .data[[grupo]],
+    color = .data[[grupo]]
+  )
+) +
+  geom_boxplot() +
+  geom_rug(
+    alpha = 0.15
+  ) +
+  theme_classic() +
+  labs(
+    title = "Distribuição de horas na Universidade",
+    x = "Instituição",
+    subtitle = "Horas/semana"
+  )
+
+hist_horas + bx_horas
+```
+
+## Shapiro_wilk horas
+
+O teste de Shapiro-Wilk foi aplicado para verificar a normalidade da variável horas_universidade_semana. Os resultados (p < 0,001 tanto para Javeriana quanto para UFMG, e também na amostra total) indicam rejeição da hipótese de normalidade, justificando o uso de um teste não paramétrico (Wilcoxon) para a comparação entre os grupos.
+```{r}
+var <- "horas_universidade_semana"
+
+resultado_shapiro <- df %>%
+  filter(
+    !is.na(.data[[var]]),
+    !is.na(.data[[grupo]])
+  ) %>%
+  group_by(.data[[grupo]]) %>%
+  summarise(
+    n = n(),
+    W = unname(shapiro.test(.data[[var]])$statistic),
+    p_valor = shapiro.test(.data[[var]])$p.value,
+    .groups = "drop"
+  ) %>%
+  rename(grupo_resultado = all_of(grupo))
+
+resultado_total <- df %>%
+  filter(
+    !is.na(.data[[var]]),
+    !is.na(.data[[grupo]])
+  ) %>%
+  summarise(
+    grupo_resultado = "Total",
+    n = n(),
+    W = unname(shapiro.test(.data[[var]])$statistic),
+    p_valor = shapiro.test(.data[[var]])$p.value
+  )
+
+resultado_shapiro <- bind_rows(
+  resultado_shapiro,
+  resultado_total
+)
+
+resultado_shapiro %>%
+  mutate(
+    n = fmt_br(n, 0),
+    W = fmt_br(W, 4),
+    p_valor_txt = fmt_pval(p_valor)
+  ) %>%
+  select(grupo_resultado, n, W, p_valor_txt) %>%
+  tabela_padrao(
+    "Teste de Shapiro-Wilk para normalidade das horas semanais na universidade",
+    nomes_colunas = c("Grupo", "n", "W", "p-valor"),
+    nota = "Hipótese nula: os dados seguem distribuição normal. p-valores menores que 0,05 em negrito.",
+    col_p = 4,
+    p_valores = resultado_shapiro$p_valor
+  )
+```
+
+## Teste de Wilcoxon
+
+O teste de Wilcoxon confirmou uma diferença estatisticamente significativa entre as instituições (W = 7.673,5; p = 0,0082): os estudantes da Javeriana apresentam mediana de horas semanais na universidade mais alta (25,5h) do que os da UFMG (20,0h).
+```{r}
+var <- "horas_universidade_semana"
+grupo <- "instituicao_origem"
+
+teste <- wilcox.test(
+  df[[var]] ~ df[[grupo]]
+)
+
+grupos <- unique(df[[grupo]])
+
+resultado <- tibble(
+  Variável = var,
+  `Grupo 1` = grupos[1],
+  `Mediana G1` = median(
+    df[[var]][df[[grupo]] == grupos[1]],
+    na.rm = TRUE
+  ),
+  `Grupo 2` = grupos[2],
+  `Mediana G2` = median(
+    df[[var]][df[[grupo]] == grupos[2]],
+    na.rm = TRUE
+  ),
+  `W` = unname(teste$statistic),
+  `p-valor` = teste$p.value
+)
+
+resultado %>%
+  mutate(
+    `Mediana G1` = fmt_br(`Mediana G1`, 1),
+    `Mediana G2` = fmt_br(`Mediana G2`, 1),
+    W = fmt_br(W, 1),
+    p_txt = fmt_pval(`p-valor`)
+  ) %>%
+  select(Variável, `Grupo 1`, `Mediana G1`, `Grupo 2`, `Mediana G2`, W, p_txt) %>%
+  tabela_padrao(
+    "Teste de Mann-Whitney: horas semanais na universidade entre as instituições",
+    nomes_colunas = c("Variável", "Grupo 1", "Mediana G1", "Grupo 2", "Mediana G2", "W", "p-valor"),
+    nota = "Teste de Wilcoxon rank-sum com correção de continuidade. p-valores menores que 0,05 em negrito.",
+    col_p = 7,
+    p_valores = resultado$`p-valor`
+  )
+
+```
+
+## Classificação MHC
+
+A variável categorizada segundo os critérios de Keyes, mostra que a maior parte da amostra foi classificada como Moderate (moderado) (~53%), seguida por Flourishing (florescendo) (~42%), com uma pequena minoria em Languishing (definhando) (~6%).
+```{r}
+ggplot(
+  df,
+  aes(
+    x = factor(
+      mhc_classificacao,
+      levels = c(
+        "Languishing",
+        "Moderate",
+        "Flourishing"
+      )
+    )
+  )
+) +
+  geom_bar() +
+  theme_classic() +
+  labs(
+    title = "Distribuição da classificação MHC",
+    x = "Classificação",
+    y = "Frequência",
+    subtitle = "Critérios de Keyes"
+  )
+```
+
+# Modelagem
+
+```{r preparo-modelos}
+# ---- Variável resposta ordenada ----
+df$mhc_classificacao <- factor(
+  df$mhc_classificacao,
+  levels = c("Languishing", "Moderate", "Flourishing"),
+  ordered = TRUE
+)
+
+# ---- Práticas de lazer incluídas nos modelos ----
+vars_rec_modelo <- c(
+  "rec_caminhar", "rec_casal", "rec_contemplar", "rec_treinamento",
+  "rec_competicoes", "rec_comer_social", "rec_redes_sociais",
+  "rec_jogos_eletronicos", "rec_filmes", "rec_academia",
+  "rec_assistir_treinos", "rec_danca"
+)
+
+# Modelo 1: cada valor da escala (1 a 10) é uma categoria
+df <- df %>%
+  mutate(
+    across(
+      starts_with("rec"),
+      ~ factor(.x, levels = as.character(1:10), ordered = F)
+    ),
+    horas_universidade_semana = case_when(
+      horas_universidade_semana <= 20 ~ "Até 20h",
+      horas_universidade_semana > 20 & horas_universidade_semana <= 40 ~ "20 - 40h",
+      TRUE ~ "+40h"
+    ),
+    etnia_cor_detalhada = dplyr::recode(
+      etnia_cor_detalhada,
+      "Negro(a)" = "Preta"
+    ),
+    etnia_cor_detalhada = factor(etnia_cor_detalhada),
+    etnia_cor_detalhada = relevel(etnia_cor_detalhada, ref = "Preta")
+  )
+
+# Modelo 2: escala agrupada em cinco faixas
+df2 <- df %>%
+  mutate(
+    across(
+      starts_with("rec"),
+      ~ factor(
+        case_when(
+          .x %in% c("1", "2")  ~ "1-2",
+          .x %in% c("3", "4")  ~ "3-4",
+          .x %in% c("5", "6")  ~ "5-6",
+          .x %in% c("7", "8")  ~ "7-8",
+          .x %in% c("9", "10") ~ "9-10",
+          TRUE ~ NA_character_
+        ),
+        levels = c("1-2", "3-4", "5-6", "7-8", "9-10")
+      )
+    )
+  )
+
+# Modelo 3: escala tratada como número (1 a 10)
+df3 <- df %>%
+  mutate(
+    across(
+      starts_with("rec"),
+      ~ as.numeric(as.character(.x))
+    )
+  )
+    
+# ---- Ajuste dos três modelos ----
+modelo_ordinal <- clm(
+  mhc_classificacao ~
+    idade +
+    genero_modelo +
+    trabalho_sim +
+    horas_universidade_semana +
+    rec_caminhar +
+    rec_casal +
+    rec_contemplar +
+    rec_treinamento +
+    rec_competicoes +
+    rec_comer_social +
+    rec_redes_sociais +
+    rec_jogos_eletronicos +
+    rec_filmes +
+    rec_academia +
+    rec_assistir_treinos +
+    rec_danca +
+    rec_amigos +
+    rec_desenhar +
+    rec_musica +
+    rec_jogos_mesa +
+    rec_religioso +
+    moradia_modelo +
+    etnia_cor_detalhada +
+    anos_no_curso,
+  data = df
+)
+
+modelo_ordinal2 <- clm(
+  mhc_classificacao ~
+    idade +
+    genero_modelo +
+    trabalho_sim +
+    horas_universidade_semana +
+    rec_caminhar +
+    rec_casal +
+    rec_contemplar +
+    rec_treinamento +
+    rec_competicoes +
+    rec_comer_social +
+    rec_redes_sociais +
+    rec_jogos_eletronicos +
+    rec_filmes +
+    rec_academia +
+    rec_assistir_treinos +
+    rec_danca +
+    rec_amigos +
+    rec_desenhar +
+    rec_musica +
+    rec_jogos_mesa +
+    rec_religioso +
+    moradia_modelo +
+    etnia_cor_detalhada +
+    anos_no_curso,
+  data = df2
+)
+
+modelo_ordinal3 <- clm(
+  mhc_classificacao ~
+    idade +
+    genero_modelo +
+    trabalho_sim +
+    horas_universidade_semana +
+    rec_caminhar +
+    rec_casal +
+    rec_contemplar +
+    rec_treinamento +
+    rec_competicoes +
+    rec_comer_social +
+    rec_redes_sociais +
+    rec_jogos_eletronicos +
+    rec_filmes +
+    rec_academia +
+    rec_assistir_treinos +
+    rec_danca +
+    rec_amigos +
+    rec_desenhar +
+    rec_musica +
+    rec_jogos_mesa +
+    rec_religioso +
+    moradia_modelo +
+    etnia_cor_detalhada +
+    anos_no_curso,
+  data = df3
+)
+```
+
+```{r funcoes-auxiliares}
+# Mantém só os coeficientes das variáveis (remove os limiares/interceptos)
+tidy_clm <- function(x, ..., conf.type = "profile") {
+  broom::tidy(x, ..., conf.type = conf.type) %>%
+    dplyr::filter(coef.type == "location") %>%
+    dplyr::select(-coef.type)
+}
+
+# Tabela padronizada, com quebra de página (longtable) para o PDF
+tabela_modelo <- function(modelo, titulo, conf_type = "profile") {
+  tbl_regression(
+    modelo,
+    exponentiate = TRUE,
+    tidy_fun = purrr::partial(tidy_clm, conf.type = conf_type)
+  ) %>%
+    bold_p(t = 0.05) %>%
+    bold_labels() %>%
+    italicize_levels() %>%
+    modify_header(label = "**Variável**") %>%
+    modify_caption(titulo) %>%
+    as_kable_extra(booktabs = TRUE, longtable = TRUE, linesep = "") %>%
+    kableExtra::kable_styling(
+      latex_options = c("repeat_header"),
+      repeat_header_text = "\\textit{(continuação)}",
+      font_size = 9
+    )
+}
+
+# OR, IC 95% e p-valor de um termo específico (usado no texto)
+or_info <- function(m, termo) {
+  ic <- tryCatch(
+    exp(suppressMessages(confint(m, parm = termo))),
+    error = function(e) exp(confint(m, parm = termo, type = "Wald"))
+  )
+  list(
+    or = unname(exp(coef(m)[termo])),
+    lo = ic[1],
+    hi = ic[2],
+    p  = summary(m)$coefficients[termo, "Pr(>|z|)"]
+  )
+}
+or_txt <- function(m, termo) {
+  i <- or_info(m, termo)
+  paste0("OR = ", fmt_br(i$or), "; IC 95%: ", fmt_br(i$lo), " a ", fmt_br(i$hi), "; ", fmt_p(i$p))
+}
+
+# Diagnóstico de estimação
+diag_info <- function(m) {
+  tibble(
+    parametros = length(coef(m)),
+    n = m$nobs,
+    aic = AIC(m)
+  )
+}
+
+# Contagem de "células" atividade x nível x classificação
+contar_celulas <- function(dados) {
+  map_dfr(vars_rec_modelo, function(v) {
+    dados %>%
+      filter(!is.na(mhc_classificacao), !is.na(.data[[v]])) %>%
+      mutate(nivel = droplevels(.data[[v]])) %>%
+      count(mhc_classificacao, nivel, .drop = FALSE) %>%
+      mutate(variavel = v)
+  })
+}
+```
+
+```{r numeros-texto}
+n_modelo   <- modelo_ordinal3$nobs
+n_lang     <- sum(df$mhc_classificacao == "Languishing", na.rm = TRUE)
+n_excluidos <- nrow(df) - n_modelo
+
+# Modelo 1
+beta1        <- modelo_ordinal$beta
+n_beta1      <- length(beta1)
+or1          <- exp(beta1)
+n_extremos1  <- sum(or1 > 100 | or1 < 0.01, na.rm = TRUE)
+cel1         <- contar_celulas(df)
+pct_vazias1  <- mean(cel1$n == 0) * 100
+pct_poucas1  <- mean(cel1$n < 5) * 100
+
+# Modelo 2
+beta2        <- modelo_ordinal2$beta
+n_beta2      <- length(beta2)
+cel2         <- contar_celulas(df2)
+pct_vazias2  <- mean(cel2$n == 0) * 100
+pct_poucas2  <- mean(cel2$n < 5) * 100
+coefs2       <- summary(modelo_ordinal2)$coefficients
+termos_rec2  <- names(beta2)[str_starts(names(beta2), "rec_")]
+n_comp2      <- length(termos_rec2)
+n_sig2       <- sum(coefs2[termos_rec2, "Pr(>|z|)"] < 0.05, na.rm = TRUE)
+
+# Modelo 3
+n_beta3      <- length(modelo_ordinal3$beta)
+jogos        <- or_info(modelo_ordinal3, "rec_jogos_eletronicos")
+filmes       <- or_info(modelo_ordinal3, "rec_filmes")
+contemplar   <- or_info(modelo_ordinal3, "rec_contemplar")
+```
+
+Esta seção investiga quais práticas de lazer estão associadas à classificação de saúde mental positiva (MHC) dos estudantes. Como a resposta tem três níveis com uma ordem natural — *Languishing* (definhando) < *Moderate* (moderado) < *Flourishing* (florescendo) —, foi utilizado um **modelo de regressão logística ordinal** (modelo de chances proporcionais), ajustado com a função `clm` do pacote `ordinal`.
+
+O modelo inicial inclui idade, gênero, se o estudante trabalha e horas semanais na universidade, além de 12 práticas de lazer, cada uma medida numa escala de frequência de 1 a 10.
+
+O modelo originalmente planejado (Modelo 1) apresentou sérios problemas de estimação. Por isso, são apresentadas duas alternativas (Modelos 2 e 3), que diferem apenas na forma como as práticas de lazer entram no modelo. As demais variáveis são idênticas nos três.
+
+## Como ler os resultados
+
+Os resultados são apresentados como **razão de chances** (OR, do inglês *odds ratio*). A leitura é sempre comparativa: o OR diz quanto a chance de estar em um nível **mais alto** de saúde mental muda quando a característica muda, **mantendo as demais características iguais** (mesma idade, mesmo gênero, mesmas outras práticas de lazer etc.).
+
+- **OR = 1**: não há associação. A característica não altera a chance.
+- **OR maior que 1**: associação positiva. Por exemplo, OR = 1,20 significa chances 20% **maiores** de estar num nível mais alto de saúde mental.
+- **OR menor que 1**: associação negativa. Por exemplo, OR = 0,80 significa chances 20% **menores**.
+- **IC 95% (intervalo de confiança)**: é a faixa de valores plausíveis para o OR, considerando a incerteza de trabalhar com uma amostra. Se o intervalo **inclui o valor 1**, não é possível afirmar que existe associação.
+- **p-valor**: valores abaixo de 0,05 indicam evidência estatística de associação e aparecem **em negrito** nas tabelas.
+- **Linha de referência (—)**: em variáveis com categorias, uma categoria serve de base para comparação e, por isso, não tem OR próprio.
+
+Dois cuidados importantes. Primeiro, "chance" não é o mesmo que probabilidade: a chance é a probabilidade de algo acontecer dividida pela probabilidade de não acontecer (uma probabilidade de 75% corresponde a uma chance de 3 para 1). Na prática, basta ler o OR como "aumenta" ou "diminui" a chance. Segundo, o modelo supõe que o efeito de cada característica é o mesmo para "sair de *Languishing* para *Moderate*" e para "sair de *Moderate* para *Flourishing*" — daí o nome "chances proporcionais".
+
+Por fim, resultados não mostram relações de causa e efeito. Um OR menor que 1 para uma atividade não significa que ela prejudica a saúde mental.
+
+## As três formas de incluir as práticas de lazer
+
+A diferença entre os modelos está em como a escala de 1 a 10 de cada prática de lazer é tratada:
+
+```{r tabela-tres-modelos}
+tibble(
+  aspecto = c(
+    "Como a atividade entra",
+    "O que cada OR compara",
+    "Valores estimados por atividade",
+    "Total de efeitos estimados"
+  ),
+  m1 = c("10 categorias separadas (1, 2, ..., 10)", "Cada nível contra o nível 1", "9", as.character(n_beta1)),
+  m2 = c("5 faixas (1-2, 3-4, 5-6, 7-8, 9-10)", "Cada faixa contra a faixa 1-2", "4", as.character(n_beta2)),
+  m3 = c("Um número de 1 a 10", "O efeito de subir 1 ponto na escala", "1", as.character(n_beta3))
+) %>%
+  tabela_padrao(
+    "Diferenças na forma de incluir as práticas de lazer nos três modelos",
+    nomes_colunas = c("", "Modelo 1 (original)", "Modelo 2 (faixas)", "Modelo 3 (numérico)")
+  ) %>%
+  column_spec(1, bold = TRUE, width = "3.2cm") %>%
+  column_spec(2:4, width = "3.8cm")
+```
+
+Em termos simples: quanto mais valores o modelo precisa estimar, mais informação (pessoas) ele exige para cada um deles.
+
+## Modelo 1 (original): cada nível da escala como uma categoria
+
+**O que foi estimado.** Neste modelo, consideramos a escala inicial. A desvantagem é o número de valores a estimar: `r n_beta1` efeitos para `r n_modelo` pessoas, ou seja, menos de `r ceiling(n_modelo / n_beta1)` pessoas por efeito estimado.
+
+**Por que o modelo apresentou problemas.** O modelo é estimado por *máxima verossimilhança*: o algoritmo procura os valores de OR que melhor reproduzem o que foi observado nos dados. Quando uma combinação tem pouquíssimas pessoas ou nenhuma, o "melhor" valor possível é infinitamente grande ou igual a zero, e o algoritmo não consegue chegar a uma resposta estável. A tabela abaixo ilustra o problema com a atividade "Dança":
+
+```{r tabela-danca}
+tab_danca <- df %>%
+  filter(!is.na(mhc_classificacao), !is.na(rec_danca)) %>%
+  count(mhc_classificacao, rec_danca, .drop = FALSE) %>%
+  pivot_wider(names_from = rec_danca, values_from = n) %>%
+  mutate(mhc_classificacao = as.character(mhc_classificacao))
+
+tab_danca %>%
+  tabela_padrao(
+    "Número de estudantes por classificação MHC e frequência de dança",
+    nomes_colunas = c("Classificação MHC", names(tab_danca)[-1])
+  ) %>%
+  add_header_above(
+    setNames(c(1, ncol(tab_danca) - 1), c(" ", "Frequência de dança (escala de 1 a 10)"))
+  ) %>%
+  footnote(
+    general = "A categoria 9 tem 0 observações para duas das três categorias da variavel responta, isso impede a estimação estável no Modelo 1.",
+    general_title = "Nota:",
+    threeparttable = TRUE,
+    footnote_as_chunk = TRUE
+  )
+```
+
+```{r}
+tab_uni <- df %>%
+  filter(!is.na(mhc_classificacao), !is.na(contexto_institucional)) %>%
+  count(mhc_classificacao, contexto_institucional, .drop = FALSE) %>%
+  pivot_wider(names_from = contexto_institucional, values_from = n) %>%
+  mutate(mhc_classificacao = as.character(mhc_classificacao))
+
+tab_uni %>%
+  tabela_padrao(
+    "Número de estudantes por classificação MHC e Universidade",
+    nomes_colunas = c("Classificação MHC", names(tab_uni)[-1])
+  )
+```
+
+## Modelo 2: escala agrupada em cinco faixas
+
+**O que muda na estimação.** Os níveis vizinhos da escala foram agrupados em pares (1-2, 3-4, 5-6, 7-8, 9-10). Cada atividade passa a exigir 4 efeitos em vez de 9, e o total cai para `r n_beta2`. Com os grupos maiores, o numero de combinações sem nenhum estudante cai e o modelo converge. O modelo continua sem impor um formato à relação: a faixa 7-8 pode, por exemplo, ter efeito maior do que a faixa 9-10.
+
+**Como interpretar.** Cada OR compara uma faixa com a faixa de referência (1-2). Exemplo: para "Atividades em casal", a faixa 3-4 apresentou `r or_txt(modelo_ordinal2, "rec_casal3-4")`. Lê-se: estudantes na faixa 3-4 dessa atividade têm chances cerca de `r fmt_br((1 - or_info(modelo_ordinal2, "rec_casal3-4")$or) * 100, 0)`% menores de estar num nível mais alto de saúde mental do que os da faixa 1-2, considerando as demais características iguais.
+
+```{r tabela-modelo2}
+tabela_modelo(
+  modelo_ordinal2,
+  "Modelo 2 — Regressão ordinal com práticas de lazer agrupadas em cinco faixas (referência: faixa 1-2)"
+)
+```
+
+## Modelo 3: escala tratada como numérica
+
+**O que muda na estimação.** Aqui a escala de 1 a 10 é usada como um número, e cada atividade tem **um único efeito**: o que acontece com a chance de melhor saúde mental a cada ponto a mais na escala. O total cai para `r n_beta3` efeitos, o que torna a estimação estável e os intervalos de confiança mais estreitos.
+
+O custo é uma suposição adicional: o modelo assume que **cada ponto a mais tem o mesmo efeito**, seja passar de 1 para 2, seja de 9 para 10. Se a relação real for diferente (por exemplo, só frequências muito altas importarem), esse modelo pode não captá-la. O Modelo 2 funciona como uma verificação desse ponto.
+
+**Como interpretar.** O OR representa a mudança na chance **para cada ponto a mais** na escala da atividade. Os principais resultados foram:
+
+- **Jogos eletrônicos** (`r or_txt(modelo_ordinal3, "rec_jogos_eletronicos")`): cada ponto a mais na frequência de jogos eletrônicos está associado a chances cerca de `r fmt_br((1 - jogos$or) * 100, 0)`% menores de estar num nível mais alto de saúde mental. Os efeitos se acumulam por multiplicação: um estudante que marcou 7 comparado a um que marcou 2 (5 pontos de diferença) tem OR de `r fmt_br(jogos$or, 2)` elevado a 5 = `r fmt_br(jogos$or^5, 2)`, ou seja, chances cerca de `r fmt_br((1 - jogos$or^5) * 100, 0)`% menores.
+- **Filmes** (`r or_txt(modelo_ordinal3, "rec_filmes")`): há uma indicação de associação positiva (cerca de `r fmt_br((filmes$or - 1) * 100, 0)`% a mais nas chances por ponto), mas o resultado está no limite da significância e deve ser tratado como um indício, não como uma conclusão.
+- **Contemplar** (`r or_txt(modelo_ordinal3, "rec_contemplar")`): tendência positiva, sem significância estatística.
+
+```{r tabela-modelo3}
+tabela_modelo(
+  modelo_ordinal3,
+  "Modelo 3 — Regressão ordinal com práticas de lazer em escala numérica (OR por ponto a mais na escala)"
+)
+```
+
+## Comparação entre os modelos e recomendação
+
+A tabela a seguir resume a qualidade da estimação dos três modelos. O **AIC** compara o ajuste dos modelos penalizando a quantidade de efeitos estimados, quanto menor, melhor o equilíbrio entre ajuste e simplicidade. O AIC do Modelo 1 deve ser visto com base de comparação, justamente pela instabilidade da estimação.
+
+```{r tabela-diagnostico}
+bind_rows(
+  diag_info(modelo_ordinal)  %>% mutate(modelo = "1 - Original (10 níveis)"),
+  diag_info(modelo_ordinal2) %>% mutate(modelo = "2 - Faixas (5 níveis)"),
+  diag_info(modelo_ordinal3) %>% mutate(modelo = "3 - Escala numérica")
+) %>%
+  select(modelo, parametros, n, aic) %>%
+  mutate(
+    aic = fmt_br(aic, 1)
+  ) %>%
+  tabela_padrao(
+    "Diagnóstico de estimação dos três modelos",
+    nomes_colunas = c(
+      "Modelo", "Parâmetros estimados", "N", "AIC"
+    ),
+    nota = "Parâmetros estimados incluem os 2 limiares (interceptos) do modelo ordinal"
+  )
+```
+
+Em resumo:
+
+- **Modelo 1**: preserva todo o detalhe da escala, mas exige muito mais dados do que a amostra oferece. Não convergiu de forma confiável e seus resultados não devem ser usados para conclusões.
+- **Modelo 2**: é um meio-termo. Estima de forma estável e permite ver se o efeito muda de forma irregular ao longo da escala, mas ainda tem muitos efeitos, o que reduz a precisão e aumenta o risco de achados por acaso.
+- **Modelo 3**: é o mais simples, estável e fácil de comunicar (um único número por atividade). Sua limitação é supor que o efeito cresce de forma constante ao longo da escala.
+
+A recomendação é adotar o **Modelo 3 como análise principal** e apresentar o **Modelo 2 como análise complementar**, para verificar se as conclusões se mantêm quando não se impõe um efeito constante. Quando os dois modelos apontam no mesmo sentido, a conclusão é mais robusta.
+
+Vale registrar uma limitação: as duas instituições diferem bastante tanto nas práticas de lazer quanto nos indicadores de saúde mental (Seção 4.3), e a instituição não está incluída nos modelos. Parte das associações observadas pode, portanto, refletir diferenças entre os contextos institucionais, e não o lazer em si.
+
+\newpage
+
+```{r tabela-modelo1}
+# tabela_modelo(
+#   modelo_ordinal,
+#   "Modelo 1 (original) — Regressão ordinal com cada nível da escala de lazer como categoria (referência: nível 1)",
+#   conf_type = "Wald"
+# )
+```
+
